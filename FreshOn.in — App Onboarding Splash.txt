@@ -1,0 +1,58 @@
+FreshOn.in — App Onboarding Splash Screens
+7 Slides · Final Content
+
+SLIDE 01 — Welcome
+🇰🇳 ಬೆಂಗಳೂರಿನ ಅತಿ ದೊಡ್ಡ ಏಕ-ಬ್ರ್ಯಾಂಡ್ ಸಾವಯವ ಸಂಸ್ಥೆಗೆ ಸ್ವಾಗತ
+🇰🇳 2014 ರಿಂದ ನಿಮ್ಮ ಆರೋಗ್ಯಕ್ಕಾಗಿ
+🇬🇧 Welcome to Bengaluru's Biggest Single-Brand Organic Company
+🇬🇧 Serving honest organic food since 2014
+📌 Anchor: "ಇದು ವ್ಯಾಪಾರವಲ್ಲ. ಇದು ಆತ್ಮಸಾಕ್ಷಿ."
+
+SLIDE 02 — Founder's Oath
+🇰🇳 "ಕೆಲವರಿಗೆ ಇದು ವ್ಯಾಪಾರ ಮಾತ್ರ,
+ಆದರೆ ನಮಗೆ ಆರೋಗ್ಯಕರ ಆಹಾರದ ಜವಾಬ್ದಾರಿಯು ಕೂಡ."
+📌 — Sattya, Founder & CEO, FreshOn.in
+🇬🇧 Others may see a business here. We see a responsibility — to your health, and to the farmer who feeds you.
+
+SLIDE 03 — Our Products
+🇰🇳 ನಾವು ಬೇರೆ ಬ್ರ್ಯಾಂಡ್‌ಗಳನ್ನು ಮಾರುವುದಿಲ್ಲ —
+🇰🇳 ನಿಜವಾದ ಆರ್ಗಾನಿಕ್ ರೈತರೊಂದಿಗೆ ನಮ್ಮದೇ ಉತ್ಪನ್ನಗಳನ್ನು ಸೃಷ್ಟಿಸುತ್ತೇವೆ.
+🇬🇧 We don't sell other brands —
+🇬🇧 We work with genuine organic farmers to create our own products.
+
+SLIDE 04 — Our Purpose
+🇰🇳 ನಮ್ಮ ಪ್ರಯತ್ನ —
+🇰🇳 ಗ್ರಾಹಕರನ್ನೂ ರೈತರನ್ನೂ ಬೆಳೆಸುವುದು, ಬಳಸಿಕೊಳ್ಳುವುದಲ್ಲ.
+🇬🇧 Our purpose —
+🇬🇧 To grow with our customers and farmers, not profit at their expense.
+
+SLIDE 05 — Every Product Has a Story
+🇰🇳 ಪ್ರತಿ ಉತ್ಪನ್ನಕ್ಕೂ ಒಂದು ಕಥೆ ಇದೆ.
+🇰🇳 ಮೂಲದಿಂದ ನಿಮ್ಮ ಮನೆಯವರೆಗೆ — ಪ್ರತಿ ಹಂತದಲ್ಲೂ ಗುಣಮಟ್ಟ.
+🇬🇧 Every product has a story.
+🇬🇧 From sourcing to your doorstep — every step tested and honestly selected.
+📌 Stats to show: 1,600+ Products · 14 Categories · 10+ Years
+
+SLIDE 06 — PRIDE Membership
+🇰🇳 PRIDE ಸದಸ್ಯರಿಗೆ —
+🇰🇳 ನಿಜ MRP ಮೇಲೆ 50% ವರೆಗೂ ಉಳಿತಾಯ. ಪ್ರತಿ ಖರೀದಿಯಲ್ಲೂ.
+🇬🇧 For those who believe in what we do — PRIDE Membership.
+🇬🇧 Invest in FreshOn.in. Save up to 50% on genuine MRP on every purchase.
+
+SLIDE 07 — Call to Action
+🇰🇳 ಸಾವಯವ ಅಡುಗೆಮನೆ —
+🇰🇳 ಆರೋಗ್ಯ ಕುಟುಂಬ.
+🇬🇧 Organic kitchen. Healthy family.
+📌 Button: ಈಗಲೇ ಆರ್ಡರ್ ಮಾಡಿ → / Order Now →
+📌 Closing: "ಇದು ವ್ಯಾಪಾರವಲ್ಲ. ಇದು ಆತ್ಮಸಾಕ್ಷಿ." — This is not commerce. This is conscience.
+
+Design Brief for your UI Designer:
+
+Layout: 70% image top, 30% content bottom
+Kannada: Large, bold, primary font — hero text
+English: Small, light weight — supporting text only
+Logo: FreshOn.in logo top-left on every slide
+Slide 02: Quote-only slide — big Kannada text, founder name, English small below. Minimal. Let the words breathe.
+Slide 05: Include 3 small stat boxes — 1,600+ / 14 / 10+
+Slide 07: Ends with CTA button (orange) + conscience line at very bottom in smallest font
+Colour palette: Deep forest green, warm amber, dark earthy tones — matching FreshOn.in logo colours

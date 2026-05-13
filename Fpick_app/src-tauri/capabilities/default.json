@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "identifier": "main-capability",
+  "description": "Fpick main capability - allows shell access",
+  "local": true,
+  "windows": ["main"],
+  "permissions": [
+    "shell:allow-open",
+    "core:window:allow-set-fullscreen"
+  ]
+}

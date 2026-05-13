@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: freshon_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_DB=freshon_db
+      - POSTGRES_USER=freshon_user
+      - POSTGRES_PASSWORD=freshon_pass
+
+  backend:
+    build: ./backend
+    container_name: freshon_backend
+    volumes:
+      - ./backend:/app
+    environment:
+      - DEBUG=1
+      - SECRET_KEY=django-insecure-jhhu_&44jx-n5be+e$xlo!(zx&r^@9yq4$(6dh2xik9f@gep@@
+      - DATABASE_URL=postgres://freshon_user:freshon_pass@db:5432/freshon_db
+    depends_on:
+      - db
+    ports:
+      - "8000:8000"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: freshon_frontend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+    depends_on:
+      - backend
+
+  nginx:
+    image: nginx:alpine
+    container_name: freshon_nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+    depends_on:
+      - backend
+      - frontend
+
+volumes:
+  postgres_data:

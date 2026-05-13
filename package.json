@@ -1,0 +1,12 @@
+{
+  "name": "freshon-os",
+  "private": true,
+  "scripts": {
+    "app:dev": "npm --prefix app run dev",
+    "app:build": "npm --prefix app run build",
+    "app:tauri": "npm --prefix app run tauri",
+    "cargo": "npm --prefix app run cargo",
+    "backend:run": "docker-compose up backend",
+    "db:run": "docker-compose up db"
+  }
+}

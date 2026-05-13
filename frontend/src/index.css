@@ -1,0 +1,159 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Freshon Design System
+   All colors HSL. Strict palette: forest, harvest, mint, earth, neutrals. */
+
+@layer base {
+  :root {
+    /* Brand */
+    --forest: 123 53% 24%;          /* #1B5E20 */
+    --forest-foreground: 0 0% 100%;
+
+    --harvest: 33 100% 50%;          /* #FF9800 */
+    --harvest-foreground: 0 0% 100%;
+
+    --mint: 122 39% 49%;             /* #4CAF50 */
+    --mint-foreground: 0 0% 100%;
+    --mint-soft: 122 41% 93%;        /* #E8F5E9 ish */
+
+    --earth: 16 60% 14%;             /* #3E2723 */
+    --earth-foreground: 0 0% 100%;
+
+    /* Web homepage palette */
+    --leaf: 123 53% 24%;
+    --leaf-light: 122 39% 49%;
+    --cream: 46 60% 96%;
+    --sun: 43 96% 56%;
+    --tomato: 4 82% 58%;
+
+    /* Neutrals */
+    --background: 0 0% 100%;
+    --foreground: 0 0% 20%;          /* #333 */
+
+    --surface: 0 0% 96%;             /* #F5F5F5 */
+    --surface-foreground: 0 0% 20%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 20%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 20%;
+
+    /* Semantic mapping (shadcn) */
+    --primary: 123 53% 24%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 20%;
+
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 40%;
+
+    --accent: 122 41% 93%;
+    --accent-foreground: 123 53% 24%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 122 39% 49%;
+
+    --radius: 1rem;
+
+    /* Gradients & shadows */
+    --gradient-fresh: linear-gradient(135deg, hsl(122 41% 96%) 0%, hsl(122 41% 88%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(123 53% 24%) 0%, hsl(122 39% 49%) 100%);
+    --gradient-leaf: linear-gradient(135deg, hsl(var(--leaf)) 0%, hsl(var(--leaf-light)) 100%);
+    --shadow-soft: 0 2px 12px -2px hsl(123 30% 20% / 0.08);
+    --shadow-card: 0 4px 20px -6px hsl(123 30% 20% / 0.10);
+    --shadow-cta: 0 8px 24px -8px hsl(16 60% 14% / 0.35);
+    --shadow-pop: 0 20px 50px -18px hsl(123 30% 20% / 0.35);
+
+    /* Sidebar (unused but kept for shadcn) */
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 0 0% 20%;
+    --sidebar-primary: 123 53% 24%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 122 41% 93%;
+    --sidebar-accent-foreground: 123 53% 24%;
+    --sidebar-border: 0 0% 90%;
+    --sidebar-ring: 122 39% 49%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    /* Prevent double-tap to zoom delay on mobile */
+    touch-action: manipulation;
+  }
+  body {
+    @apply bg-background text-foreground font-body;
+    font-feature-settings: "ss01", "cv11";
+    /* Disable blue tap highlight on mobile */
+    -webkit-tap-highlight-color: transparent;
+  }
+  h1, h2, h3, h4, h5 {
+    @apply font-display tracking-tight;
+  }
+}
+
+@layer components {
+  .freshon-chip {
+    @apply inline-flex items-center gap-1 rounded-full bg-surface px-3 py-1 text-xs font-medium text-foreground;
+  }
+  .freshon-card {
+    @apply rounded-2xl bg-card shadow-[var(--shadow-card)] transition-all duration-200;
+  }
+  .skeleton {
+    @apply animate-pulse rounded-xl bg-surface;
+  }
+  .scrollbar-hidden::-webkit-scrollbar { display: none; }
+  .scrollbar-hidden { scrollbar-width: none; }
+  .gradient-leaf { background-image: var(--gradient-leaf); }
+  .gradient-hero { background-image: var(--gradient-fresh); }
+  .transition-smooth { transition: all 180ms cubic-bezier(0.22, 1, 0.36, 1); }
+}
+
+@layer utilities {
+  .bg-mint-soft { background-color: hsl(var(--mint-soft)); }
+  .text-forest { color: hsl(var(--forest)); }
+  .text-mint { color: hsl(var(--mint)); }
+  .text-harvest { color: hsl(var(--harvest)); }
+  .text-earth { color: hsl(var(--earth)); }
+}
+
+@keyframes pop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+.animate-pop { animation: pop 0.3s ease-out; }
+
+@keyframes slide-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+.animate-slide-up { animation: slide-up 0.3s ease-out; }
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in { animation: fade-in 0.4s ease-out both; }
+
+@keyframes emerge {
+  0% { transform: scale(0.3); opacity: 0; }
+  60% { transform: scale(1.1); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.animate-emerge {
+  animation: emerge 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}

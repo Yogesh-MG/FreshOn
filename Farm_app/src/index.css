@@ -1,0 +1,123 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Golden Harvest design system. All colors HSL. */
+
+@layer base {
+  :root {
+    /* Brand */
+    --background: 45 100% 96%;            /* Soft Cream */
+    --foreground: 142 75% 10%;            /* Deep Forest */
+
+    --card: 0 0% 100%;
+    --card-foreground: 142 75% 10%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 142 75% 10%;
+
+    --primary: 45 100% 50%;               /* Golden Harvest */
+    --primary-foreground: 142 75% 10%;
+    --primary-glow: 42 100% 62%;
+
+    --secondary: 142 72% 29%;             /* Forest Green */
+    --secondary-foreground: 45 100% 96%;
+    --secondary-deep: 142 75% 16%;
+
+    --muted: 45 40% 92%;
+    --muted-foreground: 142 20% 35%;
+
+    --accent: 30 60% 90%;
+    --accent-foreground: 142 75% 10%;
+
+    --destructive: 8 75% 50%;
+    --destructive-foreground: 45 100% 96%;
+
+    --border: 142 20% 88%;
+    --input: 142 20% 88%;
+    --ring: 45 100% 50%;
+
+    --radius: 1.5rem;
+
+    /* Gradients */
+    --gradient-golden: linear-gradient(135deg, hsl(45 100% 50%), hsl(38 100% 55%));
+    --gradient-forest: linear-gradient(135deg, hsl(142 72% 29%), hsl(142 75% 18%));
+    --gradient-dawn: linear-gradient(180deg, hsl(45 100% 96% / 0), hsl(45 100% 96% / 0.95) 60%, hsl(45 100% 96%));
+    --gradient-glass: linear-gradient(135deg, hsl(0 0% 100% / 0.6), hsl(0 0% 100% / 0.3));
+
+    /* Shadows */
+    --shadow-glass: 0 8px 32px -8px hsl(142 75% 12% / 0.12);
+    --shadow-soft: 0 4px 24px -6px hsl(142 75% 12% / 0.08);
+    --shadow-glow: 0 16px 48px -12px hsl(45 100% 50% / 0.35);
+    --shadow-deep: 0 24px 64px -16px hsl(142 75% 12% / 0.25);
+
+    /* Motion */
+    --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+    --transition-base: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html, body, #root {
+    @apply h-full;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Outfit', system-ui, -apple-system, sans-serif;
+    font-feature-settings: "ss01", "cv11";
+  }
+  .material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  }
+}
+
+@layer components {
+  .glass {
+    @apply bg-white/55 backdrop-blur-xl border border-white/70;
+    box-shadow: var(--shadow-glass);
+  }
+  .glass-dark {
+    @apply backdrop-blur-xl border;
+    background: hsl(142 75% 10% / 0.55);
+    border-color: hsl(45 100% 96% / 0.15);
+  }
+  .pill {
+    @apply inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold tracking-wide;
+  }
+  .shimmer {
+    background: linear-gradient(90deg,
+      hsl(var(--muted)) 0%,
+      hsl(45 60% 96%) 50%,
+      hsl(var(--muted)) 100%);
+    background-size: 200% 100%;
+    animation: shimmer 1.6s ease-in-out infinite;
+  }
+  .tap {
+    @apply transition-transform duration-150 active:scale-[0.97];
+  }
+}
+
+@layer utilities {
+  .text-balance { text-wrap: balance; }
+  .text-pretty { text-wrap: pretty; }
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
