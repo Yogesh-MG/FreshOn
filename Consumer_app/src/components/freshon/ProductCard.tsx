@@ -247,14 +247,7 @@ export const ProductCard = ({
           )}
         </div>
 
-        <TouchScale scale={0.95} className="flex-shrink-0">
-          <Link
-            to="/quick-shop"
-            className="h-8 rounded-lg bg-mint/10 px-3 flex items-center justify-center text-[10px] font-bold text-forest hover:bg-mint/20 transition-colors"
-          >
-            Quick shop
-          </Link>
-        </TouchScale>
+        
       </div>
     </TouchScale>
   );

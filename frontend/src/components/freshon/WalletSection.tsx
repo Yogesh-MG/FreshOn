@@ -1,7 +1,7 @@
 import { Wallet, Plus, TrendingDown, TrendingUp, History } from "lucide-react";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import api from "@/utils/api";
+import { wallet as walletModule } from "@freshon/api";
 import { WalletTopupModal } from "./WalletTopupModal";
 import { WalletHistoryModal } from "./WalletHistoryModal";
 
@@ -20,19 +20,13 @@ export const WalletSection = () => {
 
   const { data: wallet } = useQuery({
     queryKey: ["wallet", "balance"],
-    queryFn: async () => {
-      const res = await api.get("/api/wallet/wallet/balance/");
-      return res.data;
-    },
+    queryFn: () => walletModule.getBalance(),
     refetchInterval: 5000,
   });
 
   const { data: history } = useQuery({
     queryKey: ["wallet", "history"],
-    queryFn: async () => {
-      const res = await api.get("/api/wallet/wallet/history/");
-      return res.data;
-    },
+    queryFn: () => walletModule.getTransactionHistory(),
   });
 
   if (!wallet) return null;
@@ -52,7 +46,7 @@ export const WalletSection = () => {
           </div>
           <p className="text-sm font-semibold opacity-90 mb-1">Current Balance</p>
           <h2 className="font-display text-4xl font-bold mb-6">₹{Number(wallet.balance).toFixed(2) || "0.00"}</h2>
-          
+
           <div className="grid grid-cols-2 gap-3">
             <button
               onClick={() => setShowTopupModal(true)}

@@ -160,8 +160,41 @@ const HomeContent = () => {
           </div>
         </div>
       </section>
-
-      <StickyCartBar ctaLabel="View Cart" />
+      {/* Company Footer */}
+      <footer className="mt-12 border-t border-border bg-surface/50 py-10 px-4">
+        <div className="container mx-auto max-w-4xl">
+          <div className="grid gap-8 md:grid-cols-2">
+            <div>
+              <h2 className="font-display text-xl font-bold text-forest">Freshon</h2>
+              <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
+                FreshOn is a farm-to-fork initiative connecting health-conscious consumers directly with local farmers. 
+                We ensure 100% organic, pesticide-free produce harvested on the same day it reaches your doorstep.
+              </p>
+            </div>
+            <div>
+              <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Company Details</h3>
+              <ul className="mt-3 space-y-2 text-sm text-foreground/80">
+                <li>Freshon Organic Solutions Pvt Ltd</li>
+                <li>#45, Farm Hub North, Hebbal, Bangalore</li>
+                <li>Karnataka, India - 560024</li>
+                <li className="pt-2">
+                  <a 
+                    href="https://freshon.in" 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="inline-flex items-center gap-1.5 font-bold text-forest hover:underline"
+                  >
+                    Visit Website <Leaf className="h-3 w-3" />
+                  </a>
+                </li>
+              </ul>
+            </div>
+          </div>
+          <div className="mt-10 border-t border-border/50 pt-6 text-center text-[10px] text-muted-foreground uppercase tracking-widest">
+            © 2026 Freshon. All rights reserved.
+          </div>
+        </div>
+      </footer>
     </PageShell>
   );
 };

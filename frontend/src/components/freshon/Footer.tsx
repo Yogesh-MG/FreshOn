@@ -53,12 +53,44 @@ export const Footer = () => (
         </div>
       </div>
 
-      <div className="border-t border-primary-foreground/15 mt-12 pt-6 flex flex-col md:flex-row justify-between items-center gap-3 text-xs opacity-70">
-        <div>© 2026 Freshon · Grown with care in India</div>
-        <div className="flex gap-5">
-          <a href="#">Privacy</a>
-          <a href="#">Terms</a>
-          <a href="#">Cookies</a>
+      <div className="border-t border-primary-foreground/15 mt-12 pt-12">
+        <div className="grid md:grid-cols-2 gap-12">
+          <div>
+            <h2 className="font-display text-2xl font-bold text-white mb-4">Freshon</h2>
+            <p className="text-sm opacity-80 leading-relaxed max-w-md">
+              FreshOn is a farm-to-fork initiative connecting health-conscious consumers directly with local farmers. 
+              We ensure 100% organic, pesticide-free produce harvested on the same day it reaches your doorstep.
+            </p>
+          </div>
+          <div>
+            <h3 className="text-sm font-bold uppercase tracking-widest opacity-60 mb-6">Company Details</h3>
+            <div className="grid sm:grid-cols-2 gap-8">
+              <ul className="space-y-3 text-sm opacity-90">
+                <li className="font-bold">Freshon Organic Solutions Pvt Ltd</li>
+                <li>#45, Farm Hub North, Hebbal</li>
+                <li>Bangalore, Karnataka, India</li>
+                <li>PIN: 560024</li>
+              </ul>
+              <ul className="space-y-3 text-sm opacity-90">
+                <li className="flex items-center gap-2"><Phone className="h-4 w-4" /> 1800-FRESHON</li>
+                <li className="flex items-center gap-2"><Mail className="h-4 w-4" /> hello@freshon.in</li>
+                <li className="pt-2">
+                  <a href="#" className="inline-flex items-center gap-2 text-white font-bold hover:underline">
+                    Download App <Leaf className="h-4 w-4 text-mint" />
+                  </a>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        
+        <div className="mt-16 pt-8 border-t border-primary-foreground/10 flex flex-col md:flex-row justify-between items-center gap-4 text-[10px] uppercase tracking-[0.2em] opacity-50">
+          <div>© 2014-2026 Freshon Organic Solutions · All rights reserved</div>
+          <div className="flex gap-8">
+            <a href="#" className="hover:opacity-100 transition-opacity">Privacy Policy</a>
+            <a href="#" className="hover:opacity-100 transition-opacity">Terms of Service</a>
+            <a href="#" className="hover:opacity-100 transition-opacity">Cookie Policy</a>
+          </div>
         </div>
       </div>
     </div>

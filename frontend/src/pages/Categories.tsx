@@ -2,41 +2,36 @@ import { useState } from "react";
 import { PageShell } from "@/components/freshon/PageShell";
 import { ProductCard } from "@/components/freshon/ProductCard";
 import { LayoutGrid, ChevronLeft, Search, Filter, Loader2 } from "lucide-react";
-import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
+import { useSearchParams } from "react-router-dom";
 import api from "@/utils/api";
+import { orders as ordersModule } from "@freshon/api";
 import { cn } from "@/lib/utils";
 import { groupBatchesByProduct } from "@/utils/product-utils";
 
 // Categories page — lazy-loads subcategories on category click
 
 const Categories = () => {
+  const [searchParams] = useSearchParams();
+  const modifyOrderId = searchParams.get("modify_order_id");
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [selectedSubId, setSelectedSubId] = useState<string | null>(null);
 
-  // 1. Fetch top-level categories (lightweight — no nested subcategories)
-  const {
-    data: mainGroupsData,
-    fetchNextPage: fetchNextGroups,
-    hasNextPage: hasNextGroups,
-    isFetchingNextPage: fetchingGroups
-  } = useInfiniteQuery({
-    queryKey: ["categories-infinite"],
-    queryFn: ({ pageParam = 1 }) =>
-      api.get(`/api/inventory/categories/?page=${pageParam}`).then((res) => {
-        const data = res.data;
-        return Array.isArray(data) ? { results: data } : data;
-      }),
-    getNextPageParam: (lastPage) => {
-      if (lastPage.next) {
-        const url = new URL(lastPage.next, window.location.origin);
-        return url.searchParams.get("page");
-      }
-      return undefined;
-    },
-    initialPageParam: 1,
+  // 0. Fetch current order items if modifying
+  const { data: order } = useQuery({
+    queryKey: ["order", modifyOrderId],
+    queryFn: () => ordersModule.getOrder(modifyOrderId!),
+    enabled: !!modifyOrderId,
   });
 
-  const mainGroups = mainGroupsData?.pages.flatMap((p: any) => p.results || []) ?? [];
+  // 1. Fetch top-level categories (lightweight — no nested subcategories)
+  const { data: mainGroups = [] } = useQuery({
+    queryKey: ["categories-all"],
+    queryFn: () => api.get("/api/inventory/categories/").then((res) => {
+      const data = res.data;
+      return Array.isArray(data) ? data : (data.results ?? []);
+    }),
+  });
 
   // 2. Lazy-fetch subcategories only when a category is selected
   const selectedGroup = mainGroups.find((i: any) => i.id.toString() === selectedGroupId);
@@ -101,15 +96,6 @@ const Categories = () => {
                 )}
               </button>
             ))}
-            {hasNextGroups && (
-              <button
-                onClick={() => fetchNextGroups()}
-                disabled={fetchingGroups}
-                className="col-span-full py-4 text-[10px] font-bold text-forest"
-              >
-                {fetchingGroups ? <Loader2 className="mx-auto h-4 w-4 animate-spin" /> : "Load More"}
-              </button>
-            )}
           </div>
         </div>
       </PageShell>
@@ -178,7 +164,13 @@ const Categories = () => {
             ) : (
               <div className="grid grid-cols-2 gap-3">
                 {products.length > 0 ? (
-                  products.map((p: any) => <ProductCard key={p.id} product={p} />)
+                  products.map((p: any) => (
+                    <ProductCard 
+                      key={p.id} 
+                      product={p} 
+                      orderItems={order?.items} 
+                    />
+                  ))
                 ) : (
                   <p className="col-span-full py-20 text-center text-sm text-muted-foreground">No products found in this category.</p>
                 )}
