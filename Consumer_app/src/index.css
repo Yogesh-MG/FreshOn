@@ -97,12 +97,17 @@
     /* Prevent double-tap to zoom delay on mobile */
     touch-action: manipulation;
   }
-  body {
+  html, body {
     @apply bg-background text-foreground;
     font-family: 'Inter', system-ui, sans-serif;
     font-feature-settings: "ss01", "cv11";
     /* Disable blue tap highlight on mobile */
     -webkit-tap-highlight-color: transparent;
+    overflow-x: hidden;
+    width: 100%;
+    max-width: 100%;
+    position: relative;
+    overscroll-behavior-x: none;
   }
   h1, h2, h3, h4, h5 {
     @apply font-display tracking-tight;
@@ -140,6 +145,29 @@
   .text-harvest { color: hsl(var(--harvest)); }
   .text-harvest-foreground { color: hsl(var(--harvest-foreground)); }
   .text-earth { color: hsl(var(--earth)); }
+  
+  .mb-3 {
+    margin-bottom: 0.75rem;
+    margin-left: 1rem;
+  }
+  .-mt-1 {
+    margin-top: -0.25rem;
+    margin-left: 1rem;
+  }
+  .mt-3 {
+    margin-top: 0.75rem;
+    margin-left: 1rem;
+  }
+  .text-sm {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    margin-left: 1rem;
+  }
+  .text-xs {
+    font-size: 0.75rem;
+    line-height: 1rem;
+    margin-left: 1rem;
+  }
 }
 
 @keyframes pop {

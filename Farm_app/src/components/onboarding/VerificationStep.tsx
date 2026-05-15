@@ -2,7 +2,6 @@ import { motion } from "framer-motion";
 import { useRef, useState } from "react";
 import { toast } from "@/hooks/use-toast";
 import { useUploadMedia } from "@/hooks/useFarmer";
-import { getApiErrorMessage } from "@/services/api";
 import { BloomSuccess } from "../freshon/BloomSuccess";
 import { Icon } from "@/components/freshon/Icon";
 import { StepHeader } from "../freshon/StepHeader";
@@ -35,7 +34,7 @@ export const VerificationStep = ({ onComplete, onBack }: Props) => {
       setSubmitting(false);
       toast({
         title: "Verification not uploaded",
-        description: getApiErrorMessage(error, "Please try again."),
+        description: "Please try again.",
         variant: "destructive",
       });
     }

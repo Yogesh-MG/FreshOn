@@ -25,6 +25,7 @@ import Login from "./pages/Login.tsx";
 import Signup from "./pages/Signup.tsx";
 import Search from "./pages/Search.tsx";
 import Pride from "./pages/Pride.tsx";
+import Wallet from "./pages/Wallet.tsx";
 import Onboarding from "./pages/Onboarding.tsx";
 import VerifyOtp from "./pages/VerifyOtp.tsx";
 import NotFound from "./pages/NotFound.tsx";
@@ -65,6 +66,7 @@ function AppContent() {
           <Route path="/track/:id" element={<PrivateRoute><PageTransition><Track /></PageTransition></PrivateRoute>} />
           <Route path="/profile" element={<PrivateRoute><PageTransition><ErrorBoundary><Profile /></ErrorBoundary></PageTransition></PrivateRoute>} />
           <Route path="/quick-shop" element={<PrivateRoute><PageTransition><QuickShop /></PageTransition></PrivateRoute>} />
+          <Route path="/wallet" element={<PrivateRoute><PageTransition><Wallet /></PageTransition></PrivateRoute>} />
           <Route path="/search" element={<PrivateRoute><PageTransition><Search /></PageTransition></PrivateRoute>} />
 
           {/* Public routes */}

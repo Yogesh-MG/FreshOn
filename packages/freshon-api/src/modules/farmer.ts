@@ -11,6 +11,9 @@ import type {
   FarmerPayout,
   FarmerRegistrationRequest,
   CurrentUser,
+  FarmerBankDetails,
+  FarmerNotification,
+  FarmerOrder,
 } from "../types";
 
 // ─── Registration & Auth ──────────────────────────────────────────────
@@ -131,5 +134,58 @@ export async function updateBatch(
  */
 export async function getPayouts(): Promise<FarmerPayout[]> {
   const res = await getClient().get<FarmerPayout[]>("/api/farmer/payouts/");
+  return res.data;
+}
+
+// ─── Bank Details ─────────────────────────────────────────────────────
+
+/**
+ * Get the farmer's bank account details.
+ * GET /api/farmer/bank/
+ */
+export async function getBankDetails(): Promise<FarmerBankDetails> {
+  const res = await getClient().get<FarmerBankDetails>("/api/farmer/bank/");
+  return res.data;
+}
+
+/**
+ * Update the farmer's bank account details.
+ * POST /api/farmer/bank/
+ */
+export async function updateBankDetails(
+  data: Partial<FarmerBankDetails>
+): Promise<FarmerBankDetails> {
+  const res = await getClient().post<FarmerBankDetails>("/api/farmer/bank/", data);
+  return res.data;
+}
+
+// ─── Notifications ───────────────────────────────────────────────────
+
+/**
+ * Get the farmer's notifications.
+ * GET /api/farmer/notifications/
+ */
+export async function getNotifications(): Promise<FarmerNotification[]> {
+  const res = await getClient().get<FarmerNotification[]>("/api/farmer/notifications/");
+  return res.data;
+}
+
+/**
+ * Mark a notification as read (or all if no ID provided).
+ * POST /api/farmer/notifications/
+ */
+export async function markNotificationRead(id?: string): Promise<{ status: string }> {
+  const res = await getClient().post<{ status: string }>("/api/farmer/notifications/", { id });
+  return res.data;
+}
+
+// ─── Orders ───────────────────────────────────────────────────────────
+
+/**
+ * Get orders containing this farmer's products.
+ * GET /api/farmer/orders/
+ */
+export async function getOrders(): Promise<FarmerOrder[]> {
+  const res = await getClient().get<FarmerOrder[]>("/api/farmer/orders/");
   return res.data;
 }

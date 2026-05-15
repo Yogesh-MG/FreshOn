@@ -1,7 +1,9 @@
 import React, { createContext, ReactNode, useCallback, useContext, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY, USER_KEY } from "@/services/api";
+import { setAuthTokens, clearAuthTokens, getAccessToken } from "@freshon/api";
 import { AuthUser } from "@/types/api";
+
+const USER_KEY = "freshon_farmer_user";
 
 interface AuthContextType {
   user: AuthUser | null;
@@ -15,6 +17,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const readStoredUser = () => {
+  if (typeof window === "undefined") return null;
   const stored = localStorage.getItem(USER_KEY);
   if (!stored) return null;
 
@@ -34,24 +37,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const login = useCallback((userData: AuthUser, accessToken: string, refreshToken: string) => {
     setUser(userData);
     localStorage.setItem(USER_KEY, JSON.stringify(userData));
-    localStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
-    localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
-    localStorage.setItem("farmer_id", String(userData.id));
+    setAuthTokens(accessToken, refreshToken);
   }, []);
 
   const logout = useCallback(() => {
     setUser(null);
     localStorage.removeItem(USER_KEY);
-    localStorage.removeItem(ACCESS_TOKEN_KEY);
-    localStorage.removeItem(REFRESH_TOKEN_KEY);
-    localStorage.removeItem("farmer_id");
+    clearAuthTokens();
     queryClient.clear();
   }, [queryClient]);
 
   const value = useMemo(
     () => ({
       user,
-      isAuthenticated: Boolean(user && localStorage.getItem(ACCESS_TOKEN_KEY)),
+      isAuthenticated: Boolean(user && getAccessToken()),
       isLoading,
       login,
       logout,

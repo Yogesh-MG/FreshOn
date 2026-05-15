@@ -10,6 +10,7 @@ import type {
   InventoryBatch,
   FarmerProfile,
   PaginatedResponse,
+  Category as CatalogProduct,
 } from "../types";
 
 // ─── Categories ───────────────────────────────────────────────────────
@@ -108,6 +109,17 @@ export async function listFarmers(): Promise<PaginatedResponse<FarmerProfile>> {
  */
 export async function getFarmer(id: number): Promise<FarmerProfile> {
   const res = await getClient().get<FarmerProfile>(`/api/inventory/farmers/${id}/`);
+  return res.data;
+}
+
+// ─── Products (Catalog) ───────────────────────────────────────────────
+
+/**
+ * List catalog products.
+ * GET /api/inventory/products/
+ */
+export async function listProducts(): Promise<PaginatedResponse<CatalogProduct>> {
+  const res = await getClient().get<PaginatedResponse<CatalogProduct>>("/api/inventory/products/");
   return res.data;
 }
 

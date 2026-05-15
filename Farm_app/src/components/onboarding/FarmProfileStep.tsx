@@ -3,7 +3,6 @@ import { useRef, useState } from "react";
 import { StepHeader } from "../freshon/StepHeader";
 import { Icon } from "@/components/freshon/Icon";
 import { useUpdateProfile, useUploadMedia } from "@/hooks/useFarmer";
-import { getApiErrorMessage } from "@/services/api";
 import { toast } from "@/hooks/use-toast";
 
 interface Props {
@@ -51,7 +50,7 @@ export const FarmProfileStep = ({ onNext, onBack }: Props) => {
     } catch (error) {
       toast({
         title: "Profile not saved",
-        description: getApiErrorMessage(error, "Please try again."),
+        description: "Please try again.",
         variant: "destructive",
       });
     }

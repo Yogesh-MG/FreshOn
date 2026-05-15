@@ -4,7 +4,6 @@ import { StepHeader } from "../freshon/StepHeader";
 import { Icon } from "@/components/freshon/Icon";
 import { useAuth } from "@/context/AuthContext";
 import { useRegisterFarmer, useVerifyOTP } from "@/hooks/useFarmer";
-import { getApiErrorMessage } from "@/services/api";
 import { toast } from "@/hooks/use-toast";
 import { AuthResponse } from "@/types/api";
 
@@ -45,7 +44,7 @@ export const PhoneAuthStep = ({ onNext, onBack, onAuth }: Props) => {
     } catch (error) {
       toast({
         title: "Could not send code",
-        description: getApiErrorMessage(error, "Please check the phone number and try again."),
+        description: "Please check the phone number and try again.",
         variant: "destructive",
       });
     }
@@ -72,7 +71,7 @@ export const PhoneAuthStep = ({ onNext, onBack, onAuth }: Props) => {
     } catch (error) {
       toast({
         title: "Verification failed",
-        description: getApiErrorMessage(error, "Invalid or expired OTP."),
+        description: "Invalid or expired OTP.",
         variant: "destructive",
       });
     }

@@ -174,6 +174,7 @@ export interface Order {
   total: string;
   status: OrderStatus;
   items: OrderItem[];
+  eta_minutes?: number;
   created_at: string;
   updated_at: string;
 }
@@ -538,6 +539,38 @@ export interface FarmerPayout {
   status: "pending" | "processing" | "completed";
   created_at: string;
   completed_at: string | null;
+}
+
+export interface FarmerBankDetails {
+  account_holder_name: string;
+  account_number: string;
+  ifsc_code: string;
+  bank_name: string;
+  branch_name: string;
+}
+
+export interface FarmerNotification {
+  id: string;
+  title: string;
+  message: string;
+  is_read: boolean;
+  created_at: string;
+}
+
+export interface FarmerOrder {
+  id: string;
+  tracking_id: string;
+  customer_name: string;
+  status: string;
+  total: number;
+  created_at: string;
+  items: Array<{
+    product_name: string;
+    quantity: number;
+    unit: string;
+    price: number;
+    total: number;
+  }>;
 }
 
 // ─── POS (Fpos) ───────────────────────────────────────────────────────

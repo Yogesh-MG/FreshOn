@@ -90,13 +90,57 @@ export const useOrderModification = () => {
     },
   });
 
+  const updateItemMutation = useMutation({
+    mutationFn: async (params: UpdateItemParams) => {
+      return await ordersModule.updateItemQuantity(params.orderId, {
+        order_item_id: params.orderItemId,
+        quantity: params.quantity,
+      });
+    },
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["order", variables.orderId] });
+
+      toast({
+        title: "Quantity Updated",
+        description: `Order item updated`,
+        variant: "default",
+      });
+
+      if (data.wallet_adjustment?.amount) {
+        const isRefund = data.wallet_adjustment.type === "REFUND";
+        toast({
+          title: isRefund ? "Refund Processed" : "Wallet Updated",
+          description: `₹${data.wallet_adjustment.amount} ${isRefund ? "refunded to" : "deducted from"} wallet`,
+          variant: "default",
+        });
+      }
+    },
+    onError: (error: any) => {
+      const message = error?.response?.data?.detail || "Failed to update item quantity";
+      toast({
+        title: "Error",
+        description: message,
+        variant: "destructive",
+      });
+    },
+  });
+
   return {
     addItem: (orderId: string, batchId: number, quantity: number) =>
       addItemMutation.mutate({ orderId, batchId, quantity }),
     removeItem: (orderId: string, orderItemId: number) =>
       removeItemMutation.mutate({ orderId, orderItemId }),
-    isLoading: addItemMutation.isPending || removeItemMutation.isPending,
+    updateItem: (orderId: string, orderItemId: number, quantity: number) =>
+      updateItemMutation.mutate({ orderId, orderItemId, quantity }),
+    isLoading: addItemMutation.isPending || removeItemMutation.isPending || updateItemMutation.isPending,
     isAddingItem: addItemMutation.isPending,
     isRemovingItem: removeItemMutation.isPending,
+    isUpdatingItem: updateItemMutation.isPending,
   };
 };
+
+interface UpdateItemParams {
+  orderId: string;
+  orderItemId: number;
+  quantity: number;
+}

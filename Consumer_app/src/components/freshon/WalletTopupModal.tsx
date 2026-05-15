@@ -2,7 +2,7 @@ import { X, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import api from "@/utils/api";
+import { wallet as walletModule } from "@freshon/api";
 import { useToast } from "@/hooks/use-toast";
 
 interface WalletTopupModalProps {
@@ -27,10 +27,7 @@ export const WalletTopupModal = ({ onClose, currentBalance }: WalletTopupModalPr
   const presets = [100, 500, 1000, 2000, 5000];
 
   const { mutate: initiateTopup, isPending: isInitiating } = useMutation({
-    mutationFn: async (data: { amount: number }) => {
-      const res = await api.post("/api/wallet/wallet/initiate_topup/", data);
-      return res.data;
-    },
+    mutationFn: (data: { amount: number }) => walletModule.initiateTopup(data),
     onSuccess: (data) => {
       // Load Razorpay script
       const script = document.createElement("script");
@@ -84,10 +81,7 @@ export const WalletTopupModal = ({ onClose, currentBalance }: WalletTopupModalPr
   });
 
   const { mutate: verifyTopup, isPending: isVerifying } = useMutation({
-    mutationFn: async (data: any) => {
-      const res = await api.post("/api/wallet/wallet/verify_topup/", data);
-      return res.data;
-    },
+    mutationFn: (data: any) => walletModule.verifyTopup(data),
     onSuccess: (data) => {
       toast({
         title: "Success!",
@@ -107,8 +101,8 @@ export const WalletTopupModal = ({ onClose, currentBalance }: WalletTopupModalPr
   });
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end bg-black/50 sm:items-center">
-      <div className="w-full rounded-t-2xl bg-white p-6 sm:max-w-md sm:rounded-2xl">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-200">
         {/* Header */}
         <div className="mb-6 flex items-center justify-between">
           <h2 className="text-xl font-bold">Add Money to Wallet</h2>

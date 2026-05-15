@@ -3,7 +3,6 @@ import { useState } from "react";
 import { StepHeader } from "../freshon/StepHeader";
 import { Icon } from "@/components/freshon/Icon";
 import { useProfile, useUpdateProfile } from "@/hooks/useFarmer";
-import { getApiErrorMessage } from "@/services/api";
 import { toast } from "@/hooks/use-toast";
 
 const SEASONAL = [
@@ -47,7 +46,7 @@ export const CropsStep = ({ onNext, onBack }: Props) => {
     } catch (error) {
       toast({
         title: "Crops not saved",
-        description: getApiErrorMessage(error, "Please try again."),
+        description: "Please try again.",
         variant: "destructive",
       });
     }

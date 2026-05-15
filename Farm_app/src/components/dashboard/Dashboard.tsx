@@ -16,7 +16,6 @@ import produceImg from "@/assets/produce-flatlay.jpg";
 import { useAuth } from "@/context/AuthContext";
 import { useBatches, useCreateBatch, useDashboard, useProfile } from "@/hooks/useFarmer";
 import { toast } from "@/hooks/use-toast";
-import { getApiErrorMessage } from "@/services/api";
 import { Batch, CreateBatchPayload } from "@/types/api";
 import { Icon } from "@/components/freshon/Icon";
 import { NotificationsDrawer } from "./NotificationsDrawer";
@@ -127,7 +126,7 @@ export const Dashboard = ({ onSignOut, farmerName = "Ramesh" }: Props) => {
       setSheet({ kind: "none" });
       toast({
         title: "Error",
-        description: getApiErrorMessage(error, "Could not add product. Please try again."),
+        description: "Could not add product. Please try again.",
         variant: "destructive",
       });
     }

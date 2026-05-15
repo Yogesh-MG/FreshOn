@@ -1,9 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { farmerService } from "@/services/farmer";
-import { ACCESS_TOKEN_KEY } from "@/services/api";
+import { farmer, inventory, getAccessToken } from "@freshon/api";
 import { Batch, CreateBatchPayload, FarmerProfile, VerifyOTPRequest, BankDetails } from "@/types/api";
 
-const hasAccessToken = () => Boolean(localStorage.getItem(ACCESS_TOKEN_KEY));
+const hasAccessToken = () => Boolean(getAccessToken());
 
 export const farmerKeys = {
   profile: ["farmer", "profile"] as const,
@@ -18,14 +17,14 @@ export const farmerKeys = {
 
 export const useRegisterFarmer = () =>
   useMutation({
-    mutationFn: (phone: string) => farmerService.register({ phone }),
+    mutationFn: (phone: string) => farmer.registerFarmer({ phone }),
   });
 
 export const useVerifyOTP = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: VerifyOTPRequest) => farmerService.verifyOTP(data),
+    mutationFn: (data: VerifyOTPRequest) => farmer.registerFarmer(data),
     onSuccess: (data) => {
       queryClient.setQueryData(farmerKeys.profile, data.user);
       queryClient.invalidateQueries({ queryKey: ["farmer"] });
@@ -36,7 +35,7 @@ export const useVerifyOTP = () => {
 export const useProfile = () =>
   useQuery({
     queryKey: farmerKeys.profile,
-    queryFn: farmerService.getProfile,
+    queryFn: farmer.getProfile,
     enabled: hasAccessToken(),
     staleTime: 5 * 60 * 1000,
   });
@@ -45,7 +44,7 @@ export const useUpdateProfile = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: Partial<FarmerProfile>) => farmerService.updateProfile(data),
+    mutationFn: (data: any) => farmer.updateProfile(data),
     onSuccess: (profile) => {
       queryClient.setQueryData(farmerKeys.profile, profile);
     },
@@ -55,7 +54,7 @@ export const useUpdateProfile = () => {
 export const useDashboard = () =>
   useQuery({
     queryKey: farmerKeys.dashboard,
-    queryFn: farmerService.getDashboard,
+    queryFn: farmer.getDashboard,
     enabled: hasAccessToken(),
     staleTime: 60 * 1000,
     refetchInterval: 5 * 60 * 1000,
@@ -64,7 +63,7 @@ export const useDashboard = () =>
 export const useBatches = () =>
   useQuery({
     queryKey: farmerKeys.batches,
-    queryFn: farmerService.getBatches,
+    queryFn: farmer.listBatches,
     enabled: hasAccessToken(),
     staleTime: 2 * 60 * 1000,
   });
@@ -72,14 +71,14 @@ export const useBatches = () =>
 export const useBankDetails = () =>
   useQuery({
     queryKey: farmerKeys.bank,
-    queryFn: farmerService.getBankDetails,
+    queryFn: farmer.getBankDetails,
     enabled: hasAccessToken(),
   });
 
 export const useUpdateBankDetails = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: Partial<BankDetails>) => farmerService.updateBankDetails(data),
+    mutationFn: (data: any) => farmer.updateBankDetails(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: farmerKeys.bank });
     },
@@ -89,7 +88,7 @@ export const useUpdateBankDetails = () => {
 export const useNotifications = () =>
   useQuery({
     queryKey: farmerKeys.notifications,
-    queryFn: farmerService.getNotifications,
+    queryFn: farmer.getNotifications,
     enabled: hasAccessToken(),
     refetchInterval: 60 * 1000,
   });
@@ -97,7 +96,7 @@ export const useNotifications = () =>
 export const useMarkNotificationRead = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id?: string) => farmerService.markNotificationRead(id),
+    mutationFn: (id?: string) => farmer.markNotificationRead(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: farmerKeys.notifications });
       queryClient.invalidateQueries({ queryKey: farmerKeys.dashboard });
@@ -109,7 +108,7 @@ export const useCreateBatch = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: CreateBatchPayload) => farmerService.createBatch(data),
+    mutationFn: (data: any) => farmer.addBatch(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: farmerKeys.batches });
       queryClient.invalidateQueries({ queryKey: farmerKeys.dashboard });
@@ -120,7 +119,10 @@ export const useCreateBatch = () => {
 export const useCatalogProducts = () =>
   useQuery({
     queryKey: farmerKeys.catalogProducts,
-    queryFn: farmerService.getCatalogProducts,
+    queryFn: async () => {
+      const res = await inventory.listProducts();
+      return res.results;
+    },
     enabled: hasAccessToken(),
     staleTime: 10 * 60 * 1000,
   });
@@ -129,8 +131,8 @@ export const useUpdateBatch = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: number | string; data: Partial<CreateBatchPayload> }) =>
-      farmerService.updateBatch(id, data),
+    mutationFn: ({ id, data }: { id: number | string; data: any }) =>
+      farmer.updateBatch(String(id), data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: farmerKeys.batches });
       queryClient.invalidateQueries({ queryKey: farmerKeys.dashboard });
@@ -141,7 +143,7 @@ export const useUpdateBatch = () => {
 export const usePayouts = () =>
   useQuery({
     queryKey: farmerKeys.payouts,
-    queryFn: farmerService.getPayouts,
+    queryFn: farmer.getPayouts,
     enabled: hasAccessToken(),
     staleTime: 5 * 60 * 1000,
   });
@@ -149,7 +151,7 @@ export const usePayouts = () =>
 export const useOrders = () =>
   useQuery({
     queryKey: farmerKeys.orders,
-    queryFn: farmerService.getOrders,
+    queryFn: farmer.getOrders,
     enabled: hasAccessToken(),
     staleTime: 60 * 1000,
     refetchInterval: 30 * 1000,
@@ -157,8 +159,8 @@ export const useOrders = () =>
 
 export const useUploadMedia = () =>
   useMutation({
-    mutationFn: ({ file, type }: { file: File; type: "farm_video" | "product_video" | "profile_photo" | "photo" | "video" }) =>
-      farmerService.uploadMedia(file, type),
+    mutationFn: ({ file, type }: { file: File; type: any }) =>
+      farmer.uploadMedia(type, file),
   });
 
 export const batchToCreatePayload = (batch: Batch): CreateBatchPayload => ({

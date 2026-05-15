@@ -3,15 +3,26 @@ import { PageShell } from "@/components/freshon/PageShell";
 import { ProductCard } from "@/components/freshon/ProductCard";
 import { LayoutGrid, ChevronLeft, Search, Filter, Loader2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { useSearchParams } from "react-router-dom";
 import api from "@/utils/api";
+import { orders as ordersModule } from "@freshon/api";
 import { cn } from "@/lib/utils";
 import { groupBatchesByProduct } from "@/utils/product-utils";
 
 // Categories page — lazy-loads subcategories on category click
 
 const Categories = () => {
+  const [searchParams] = useSearchParams();
+  const modifyOrderId = searchParams.get("modify_order_id");
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [selectedSubId, setSelectedSubId] = useState<string | null>(null);
+
+  // 0. Fetch current order items if modifying
+  const { data: order } = useQuery({
+    queryKey: ["order", modifyOrderId],
+    queryFn: () => ordersModule.getOrder(modifyOrderId!),
+    enabled: !!modifyOrderId,
+  });
 
   // 1. Fetch top-level categories (lightweight — no nested subcategories)
   const { data: mainGroups = [] } = useQuery({
@@ -153,7 +164,13 @@ const Categories = () => {
             ) : (
               <div className="grid grid-cols-2 gap-3">
                 {products.length > 0 ? (
-                  products.map((p: any) => <ProductCard key={p.id} product={p} />)
+                  products.map((p: any) => (
+                    <ProductCard 
+                      key={p.id} 
+                      product={p} 
+                      orderItems={order?.items} 
+                    />
+                  ))
                 ) : (
                   <p className="col-span-full py-20 text-center text-sm text-muted-foreground">No products found in this category.</p>
                 )}

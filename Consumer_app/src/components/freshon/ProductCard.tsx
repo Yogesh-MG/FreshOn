@@ -8,8 +8,23 @@ import { TouchScale } from "./TouchScale";
 import { useMe } from "@/hooks/use-me";
 import { getCleanImageUrl } from "@/utils/image-utils";
 import { useFlyToCart } from "@/context/FlyToCartContext";
+import { useSearchParams } from "react-router-dom";
+import { useOrderModification } from "@/hooks/useOrderModification";
+import type { OrderItem } from "@freshon/api";
 
-export const ProductCard = ({ product, compact }: { product: Product; compact?: boolean }) => {
+export const ProductCard = ({ 
+  product, 
+  compact, 
+  orderItems 
+}: { 
+  product: Product; 
+  compact?: boolean;
+  orderItems?: OrderItem[];
+}) => {
+  const [searchParams] = useSearchParams();
+  const modifyOrderId = searchParams.get("modify_order_id");
+  const { addItem, updateItem, removeItem, isAddingItem } = useOrderModification();
+
   const imgRef = useRef<HTMLImageElement>(null);
   const { fly } = useFlyToCart();
   const items = useCart((s) => s.items);
@@ -34,14 +49,30 @@ export const ProductCard = ({ product, compact }: { product: Product; compact?: 
   const realBatchId = hasVariants ? variants[selectedVariantIdx].id : product.id;
   const cartKey = hasVariants ? `${product.id}-${realBatchId}` : product.id;
   
-  const qty = items[cartKey]?.qty ?? 0;
+  const cartQty = items[cartKey]?.qty ?? 0;
+  
+  // Logic for finding quantity in current order if modifying
+  const orderItem = orderItems?.find(oi => oi.batch?.toString() === realBatchId?.toString());
+  const effectiveQty = modifyOrderId ? (orderItem?.quantity ?? 0) : cartQty;
+  
   const [pop, setPop] = useState(false);
 
-  const handleAdd = () => {
+  const triggerFly = () => {
     if (imgRef.current) {
       fly(imgRef.current.getBoundingClientRect(), getCleanImageUrl(product.image));
     }
+    setPop(true);
+    setTimeout(() => setPop(false), 320);
+  };
+
+  const handleAdd = () => {
+    triggerFly();
     
+    if (modifyOrderId) {
+      addItem(modifyOrderId, Number(realBatchId), 1);
+      return;
+    }
+
     // We create a temporary product object for the cart that represents this specific variant
     const cartItem = {
       ...product,
@@ -52,8 +83,16 @@ export const ProductCard = ({ product, compact }: { product: Product; compact?: 
       mrp: activeMrp,
     };
     add(cartItem);
-    setPop(true);
-    setTimeout(() => setPop(false), 320);
+  };
+
+  const handleUpdate = (newQty: number) => {
+    if (!modifyOrderId || !orderItem) return;
+    
+    if (newQty <= 0) {
+      removeItem(modifyOrderId, orderItem.id);
+    } else {
+      updateItem(modifyOrderId, orderItem.id, newQty);
+    }
   };
 
   const discount = activeMrp ? Math.round(((activeMrp - activePrice) / activeMrp) * 100) : 0;
@@ -81,6 +120,73 @@ export const ProductCard = ({ product, compact }: { product: Product; compact?: 
             <div className="absolute right-0 top-1/2 -translate-y-1/2 z-10">
               <div className="bg-gradient-to-r from-harvest to-orange-400 text-white text-[8px] font-bold py-0.5 px-2 rounded-l-full shadow-lg border-y border-l border-white/20 animate-pulse">
                 PRIDE: ₹{pridePrice}
+              </div>
+            </div>
+          )}
+
+          {/* New Add Button in Corner */}
+          {effectiveQty === 0 && (
+            <div className="absolute bottom-2 right-2 z-20">
+              <TouchScale scale={0.9}>
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleAdd();
+                  }}
+                  disabled={isAddingItem}
+                  className={cn(
+                    "flex h-9 w-9 items-center justify-center rounded-lg bg-mint text-mint-foreground shadow-lg transition-all duration-200 hover:bg-mint/90 disabled:opacity-50",
+                    pop && "animate-pop"
+                  )}
+                  aria-label={modifyOrderId ? "Add to order" : "Add to cart"}
+                >
+                  <Plus className="h-5 w-5" strokeWidth={3} />
+                </button>
+              </TouchScale>
+            </div>
+          )}
+
+          {/* Quantity Stepper in Corner */}
+          {effectiveQty > 0 && (
+            <div className="absolute bottom-2 right-2 z-20">
+              <div className="flex h-9 items-center rounded-lg bg-mint text-mint-foreground shadow-lg overflow-hidden">
+                <TouchScale scale={0.8} className="h-full">
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (modifyOrderId) {
+                        handleUpdate(effectiveQty - 1);
+                      } else {
+                        setQty(cartKey, cartQty - 1);
+                      }
+                    }}
+                    className="grid h-9 w-8 place-items-center hover:bg-mint/80"
+                    aria-label="Decrease"
+                  >
+                    <Minus className="h-3 w-3" strokeWidth={3} />
+                  </button>
+                </TouchScale>
+                <span className="min-w-5 text-center text-xs font-bold">{effectiveQty}</span>
+                <TouchScale scale={0.8} className="h-full">
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (modifyOrderId) {
+                        handleUpdate(effectiveQty + 1);
+                      } else {
+                        setQty(cartKey, cartQty + 1);
+                        triggerFly();
+                      }
+                    }}
+                    className="grid h-9 w-8 place-items-center hover:bg-mint/80"
+                    aria-label="Increase"
+                  >
+                    <Plus className="h-3 w-3" strokeWidth={3} />
+                  </button>
+                </TouchScale>
               </div>
             </div>
           )}
@@ -141,33 +247,14 @@ export const ProductCard = ({ product, compact }: { product: Product; compact?: 
           )}
         </div>
 
-        {qty === 0 ? (
-          <TouchScale scale={0.9} className="flex-shrink-0">
-            <button
-              onClick={handleAdd}
-              className={cn(
-                "inline-flex h-8 items-center gap-0.5 rounded-full bg-mint px-2.5 text-[11px] font-bold text-mint-foreground shadow-soft transition-all duration-200 hover:bg-mint/90",
-                pop && "animate-pop",
-              )}
-            >
-              <Plus className="h-3 w-3" /> ADD
-            </button>
-          </TouchScale>
-        ) : (
-          <div className="inline-flex h-8 items-center rounded-full bg-mint text-mint-foreground shadow-soft overflow-hidden">
-            <TouchScale scale={0.8} className="h-full">
-              <button onClick={() => setQty(cartKey, qty - 1)} className="grid h-8 w-8 place-items-center rounded-full hover:bg-mint/80" aria-label="Decrease">
-                <Minus className="h-3 w-3" />
-              </button>
-            </TouchScale>
-            <span className="min-w-4 text-center text-[11px] font-bold">{qty}</span>
-            <TouchScale scale={0.8} className="h-full">
-              <button onClick={() => setQty(cartKey, qty + 1)} className="grid h-8 w-8 place-items-center rounded-full hover:bg-mint/80" aria-label="Increase">
-                <Plus className="h-3 w-3" />
-              </button>
-            </TouchScale>
-          </div>
-        )}
+        <TouchScale scale={0.95} className="flex-shrink-0">
+          <Link
+            to="/quick-shop"
+            className="h-8 rounded-lg bg-mint/10 px-3 flex items-center justify-center text-[10px] font-bold text-forest hover:bg-mint/20 transition-colors"
+          >
+            Quick shop
+          </Link>
+        </TouchScale>
       </div>
     </TouchScale>
   );

@@ -1,7 +1,9 @@
 import { Wallet } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import api from "@/utils/api";
+import { wallet as walletModule } from "@freshon/api";
 import { useState } from "react";
+import { WalletTopupModal } from "./WalletTopupModal";
+import { Plus } from "lucide-react";
 
 interface CheckoutWalletProps {
   orderTotal: number;
@@ -11,13 +13,11 @@ interface CheckoutWalletProps {
 export const CheckoutWallet = ({ orderTotal, onWalletAmountChange }: CheckoutWalletProps) => {
   const [useWallet, setUseWallet] = useState(false);
   const [walletAmount, setWalletAmount] = useState(0);
+  const [showTopupModal, setShowTopupModal] = useState(false);
 
   const { data: wallet } = useQuery({
     queryKey: ["wallet", "balance"],
-    queryFn: async () => {
-      const res = await api.get("/api/wallet/wallet/balance/");
-      return res.data;
-    },
+    queryFn: () => walletModule.getBalance(),
   });
 
   const maxWalletAmount = Math.min(wallet?.balance || 0, orderTotal);
@@ -51,8 +51,23 @@ export const CheckoutWallet = ({ orderTotal, onWalletAmountChange }: CheckoutWal
           <Wallet className="h-4 w-4 text-mint" />
           <span className="font-semibold">Use Wallet Balance</span>
         </label>
-        <span className="text-sm font-semibold text-mint">Available: ₹{wallet.balance}</span>
+        <div className="flex items-center gap-3">
+          <span className="text-sm font-semibold text-mint">Available: ₹{wallet.balance}</span>
+          <button
+            onClick={() => setShowTopupModal(true)}
+            className="flex h-7 items-center gap-1 rounded-full bg-mint-soft px-3 text-[10px] font-bold text-forest hover:bg-mint/20 transition"
+          >
+            <Plus className="h-3 w-3" /> Add
+          </button>
+        </div>
       </div>
+
+      {showTopupModal && (
+        <WalletTopupModal
+          onClose={() => setShowTopupModal(false)}
+          currentBalance={Number(wallet.balance)}
+        />
+      )}
 
       {useWallet && (
         <div className="space-y-4">

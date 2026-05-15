@@ -143,8 +143,9 @@ function buildReceiptText(
   if (tx.surcharge > 0) {
     p(leftRight("SODEXO +5%", tx.surcharge.toFixed(2)));
   }
-  p("[HR]");
-  p("[B]" + leftRight("NET AMOUNT", "Rs." + tx.total.toLocaleString("en-IN")) + "[b]");
+  p("[HR3]");
+  p("[H][B]" + leftRight("NET AMOUNT", "Rs." + tx.total.toLocaleString("en-IN")) + "[b][h]");
+  p("[HR3]");
   p(leftRight("Total GST Incl.", "Rs." + totalGst.toFixed(2)));
   // ─── Payment Details (Compact Table) ───
   p("[C]PAYMENT DETAILS[c]");

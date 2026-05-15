@@ -64,3 +64,18 @@ export async function removeItemFromOrder(
   );
   return res.data;
 }
+
+/**
+ * Update the quantity of an item in an existing order.
+ * POST /api/orders/orders/{tracking_id}/update-item/
+ */
+export async function updateItemQuantity(
+  trackingId: string,
+  data: { order_item_id: number; quantity: number }
+): Promise<any> {
+  const res = await getClient().post<any>(
+    `/api/orders/orders/${trackingId}/update-item/`,
+    data
+  );
+  return res.data;
+}

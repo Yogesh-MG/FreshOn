@@ -25,8 +25,8 @@ export const WalletHistoryModal = ({ onClose }: WalletHistoryModalProps) => {
   });
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end bg-black/50 sm:items-center">
-      <div className="w-full rounded-t-2xl bg-white p-6 sm:max-w-md sm:rounded-2xl max-h-[80vh] overflow-y-auto">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="mb-6 flex items-center justify-between sticky top-0 bg-white pb-4">
           <h2 className="text-xl font-bold">Wallet History</h2>
@@ -39,7 +39,7 @@ export const WalletHistoryModal = ({ onClose }: WalletHistoryModalProps) => {
         </div>
 
         {/* History List */}
-        <div className="space-y-3">
+        <div className="space-y-3 overflow-y-auto flex-1 pr-1 custom-scrollbar">
           {isLoading ? (
             <div className="py-8 text-center text-muted-foreground">Loading...</div>
           ) : history?.results?.length === 0 ? (

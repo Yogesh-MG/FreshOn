@@ -85,10 +85,10 @@ export const Header = () => {
         <Link to="/profile" className="hidden h-10 w-10 place-items-center rounded-full hover:bg-surface md:grid" aria-label="Profile">
           <User className="h-5 w-5" />
         </Link>
-        <Link to="/profile?section=wallet" className="grid h-10 w-10 place-items-center rounded-full hover:bg-surface" aria-label="Wallet">
+        <Link to="/wallet" className="grid h-10 w-10 place-items-center rounded-full hover:bg-surface" aria-label="Wallet">
           <Wallet className="h-5 w-5 text-mint" />
         </Link>
-        <Link to="/cart" className="relative grid h-10 w-10 place-items-center rounded-full hover:bg-surface" aria-label="Cart">
+        <Link to="/cart" id="cart-target" className="relative grid h-10 w-10 place-items-center rounded-full hover:bg-surface" aria-label="Cart">
           <ShoppingCart className="h-5 w-5" />
           {count > 0 && (
             <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-harvest px-1 text-[10px] font-bold text-harvest-foreground">
@@ -111,7 +111,8 @@ export const Header = () => {
                 { to: "/", label: "Home", icon: Home },
                 { to: "/categories", label: "Categories", icon: LayoutGrid },
                 { to: "/cart", label: "Cart", icon: ShoppingCart },
-                 { to: "/profile?section=orders", label: "My orders", icon: Package },
+                { to: "/wallet", label: "My Wallet", icon: Wallet },
+                { to: "/profile?section=orders", label: "My orders", icon: Package },
                  { to: "/profile", label: "Profile", icon: User },
                  { to: "/pride", label: "Become PRIDE Partner", icon: Star, highlight: true },
                ].map((item: any) => (

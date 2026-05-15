@@ -4,7 +4,6 @@ import { formatISO } from "date-fns";
 import { StepHeader } from "../freshon/StepHeader";
 import { Icon } from "@/components/freshon/Icon";
 import { useProfile, useUpdateProfile } from "@/hooks/useFarmer";
-import { getApiErrorMessage } from "@/services/api";
 import { toast } from "@/hooks/use-toast";
 
 interface Props {
@@ -30,7 +29,7 @@ export const ConsentStep = ({ onNext, onBack }: Props) => {
     } catch (error) {
       toast({
         title: "Consent not saved",
-        description: getApiErrorMessage(error, "Please try again."),
+        description: "Please try again.",
         variant: "destructive",
       });
     }
