@@ -5,6 +5,7 @@ import { useState } from "react";
 import api from "@/utils/api";
 import { cn } from "@/lib/utils";
 import { useMe } from "@/hooks/use-me";
+import { ProductCard } from "./ProductCard";
 
 export const QuickShopWidget = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -35,54 +36,77 @@ export const QuickShopWidget = () => {
 
       {/* Popover */}
       {isOpen && (
-        <div className="absolute bottom-16 right-0 w-[320px] max-h-[480px] overflow-hidden rounded-2xl bg-background shadow-2xl border border-border animate-in fade-in slide-in-from-bottom-4 duration-300">
-          <div className="bg-gradient-to-r from-mint to-forest p-4 text-white">
-            <h3 className="font-display text-lg font-bold">Quick Shop</h3>
-            <p className="text-xs opacity-90">Reorder your favorites instantly</p>
+        <div className="absolute bottom-16 right-0 w-[340px] max-h-[520px] overflow-hidden rounded-3xl bg-background shadow-2xl border border-border animate-in fade-in slide-in-from-bottom-4 duration-300">
+          <div className="bg-gradient-to-r from-mint to-forest p-5 text-white">
+            <h3 className="font-display text-xl font-bold">Quick Reorder</h3>
+            <p className="text-xs opacity-90">Your past favorites, one tap away</p>
           </div>
-
-          <div className="overflow-y-auto p-3 max-h-[380px] scrollbar-hidden">
+          
+          <div className="overflow-y-auto p-4 max-h-[420px] scrollbar-hidden">
             {orders.length === 0 ? (
               <div className="py-12 text-center">
-                <ShoppingCart className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
-                <p className="text-sm text-muted-foreground">No orders yet</p>
-              </div>
-            ) : completedOrders.length === 0 ? (
-              <div className="py-12 text-center">
-                <History className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
-                <p className="text-sm text-muted-foreground">No completed orders found</p>
+                <ShoppingCart className="mx-auto h-10 w-10 text-muted-foreground/30 mb-3" />
+                <p className="text-sm text-muted-foreground font-medium">No orders yet</p>
               </div>
             ) : (
-              <div className="space-y-2">
-                {completedOrders.slice(0, 5).map((order: any) => (
-                  <Link
-                    key={order.id || order.tracking_id}
-                    to={`/track/${order.tracking_id}`}
-                    onClick={() => setIsOpen(false)}
-                    className="flex items-center gap-3 rounded-xl bg-surface p-3 hover:bg-mint-soft transition group"
-                  >
-                    <div className="grid h-10 w-10 place-items-center rounded-lg bg-white group-hover:bg-mint text-forest group-hover:text-white transition-colors">
-                      <Package className="h-5 w-5" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold truncate">Order #{order.tracking_id}</p>
-                      <p className="text-[10px] text-muted-foreground">
-                        {new Date(order.created_at).toLocaleDateString()} · ₹{order.total_price}
-                      </p>
-                    </div>
-                    <ShoppingCart className="h-4 w-4 text-mint" />
-                  </Link>
-                ))}
+              <div className="space-y-6">
+                {/* Past Products Grid */}
+                <div>
+                  <h4 className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold mb-3 flex items-center gap-2">
+                    <History className="h-3 w-3" /> Based on your orders
+                  </h4>
+                  <div className="grid grid-cols-2 gap-3">
+                    {(() => {
+                      const uniqueProducts = new Map();
+                      orders.forEach((order: any) => {
+                        order.items?.forEach((item: any) => {
+                          if (item.batch && !uniqueProducts.has(item.batch.product_id)) {
+                            // Map API batch to ProductCard format
+                            uniqueProducts.set(item.batch.product_id, {
+                              id: item.batch.product_id,
+                              name: item.batch.product_name,
+                              price: Number(item.batch.price),
+                              mrp: Number(item.batch.mrp),
+                              unit: item.batch.variant?.unit || item.unit,
+                              image: item.batch.base_image || item.batch.batch_image,
+                              organic: item.batch.is_organic,
+                              farmFresh: item.batch.is_farm_fresh,
+                              harvestDate: item.batch.harvest_date_display,
+                              variants: [{
+                                id: item.batch.id,
+                                unit: item.batch.variant?.unit || item.unit,
+                                price: Number(item.batch.price),
+                                mrp: Number(item.batch.mrp)
+                              }]
+                            });
+                          }
+                        });
+                      });
+
+                      const productList = Array.from(uniqueProducts.values()).slice(0, 6);
+                      
+                      if (productList.length === 0) {
+                        return <p className="text-[10px] text-muted-foreground col-span-2 py-4 text-center">Items from your orders will appear here</p>;
+                      }
+
+                      return productList.map((product) => (
+                        <div key={product.id} className="scale-90 origin-top-left -mr-[10%] -mb-[10%]">
+                           <ProductCard product={product} compact />
+                        </div>
+                      ));
+                    })()}
+                  </div>
+                </div>
+
+                <Link
+                  to="/profile?section=orders"
+                  onClick={() => setIsOpen(false)}
+                  className="flex w-full items-center justify-center rounded-2xl bg-surface py-3 text-xs font-bold hover:bg-mint-soft transition border border-border/50"
+                >
+                  View Order History
+                </Link>
               </div>
             )}
-            
-            <Link
-              to="/profile?section=orders"
-              onClick={() => setIsOpen(false)}
-              className="mt-4 flex w-full items-center justify-center rounded-xl bg-surface py-2.5 text-xs font-bold hover:bg-mint-soft transition"
-            >
-              View all orders
-            </Link>
           </div>
         </div>
       )}

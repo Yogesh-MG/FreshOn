@@ -28,7 +28,7 @@ export const WalletTopupModal = ({ onClose, currentBalance }: WalletTopupModalPr
 
   const { mutate: initiateTopup, isPending: isInitiating } = useMutation({
     mutationFn: async (data: { amount: number }) => {
-      const res = await api.post("/api/wallet/wallet/initiate_topup/", data);
+      const res = await api.post("/api/wallet/initiate_topup/", data);
       return res.data;
     },
     onSuccess: (data) => {
@@ -85,7 +85,7 @@ export const WalletTopupModal = ({ onClose, currentBalance }: WalletTopupModalPr
 
   const { mutate: verifyTopup, isPending: isVerifying } = useMutation({
     mutationFn: async (data: any) => {
-      const res = await api.post("/api/wallet/wallet/verify_topup/", data);
+      const res = await api.post("/api/wallet/verify_topup/", data);
       return res.data;
     },
     onSuccess: (data) => {

@@ -4,7 +4,7 @@ import type { Product } from "@/data/catalog";
 import { useCart } from "@/store/cart";
 import { cn } from "@/lib/utils";
 import { useState, useRef } from "react";
-import { TouchScale } from "./TouchScale";
+import { TouchScale } from "../../../../frontend/src/components/freshon/TouchScale";
 import { useMe } from "@/hooks/use-me";
 import { getCleanImageUrl } from "@/utils/image-utils";
 import { useFlyToCart } from "@/context/FlyToCartContext";
@@ -12,12 +12,12 @@ import { useSearchParams } from "react-router-dom";
 import { useOrderModification } from "@/hooks/useOrderModification";
 import type { OrderItem } from "@freshon/api";
 
-export const ProductCard = ({ 
-  product, 
-  compact, 
-  orderItems 
-}: { 
-  product: Product; 
+export const ProductCard = ({
+  product,
+  compact,
+  orderItems
+}: {
+  product: Product;
   compact?: boolean;
   orderItems?: OrderItem[];
 }) => {
@@ -30,31 +30,31 @@ export const ProductCard = ({
   const items = useCart((s) => s.items);
   const add = useCart((s) => s.add);
   const setQty = useCart((s) => s.setQty);
-  
+
   const [selectedVariantIdx, setSelectedVariantIdx] = useState(0);
   const variants = product.variants || [];
   const hasVariants = variants.length > 0;
-  
+
   // Get active data (from variant or base product)
   const activeUnit = hasVariants ? variants[selectedVariantIdx].unit : product.unit;
   const activePrice = hasVariants ? variants[selectedVariantIdx].price : product.price;
   const activeMrp = hasVariants ? variants[selectedVariantIdx].mrp : product.mrp;
   const activeStock = hasVariants ? variants[selectedVariantIdx].stock : product.stock;
-  
+
   const { data: user } = useMe();
   const pridePrice = Math.round(activePrice * 0.7);
   const isPrideMember = !!user?.partnership;
-  
+
   // For the cart, we use a composite key if there are variants to track separate selections
   const realBatchId = hasVariants ? variants[selectedVariantIdx].id : product.id;
   const cartKey = hasVariants ? `${product.id}-${realBatchId}` : product.id;
-  
+
   const cartQty = items[cartKey]?.qty ?? 0;
-  
+
   // Logic for finding quantity in current order if modifying
   const orderItem = orderItems?.find(oi => oi.batch?.toString() === realBatchId?.toString());
   const effectiveQty = modifyOrderId ? (orderItem?.quantity ?? 0) : cartQty;
-  
+
   const [pop, setPop] = useState(false);
 
   const triggerFly = () => {
@@ -67,7 +67,7 @@ export const ProductCard = ({
 
   const handleAdd = () => {
     triggerFly();
-    
+
     if (modifyOrderId) {
       addItem(modifyOrderId, Number(realBatchId), 1);
       return;
@@ -87,7 +87,7 @@ export const ProductCard = ({
 
   const handleUpdate = (newQty: number) => {
     if (!modifyOrderId || !orderItem) return;
-    
+
     if (newQty <= 0) {
       removeItem(modifyOrderId, orderItem.id);
     } else {
@@ -218,8 +218,8 @@ export const ProductCard = ({
                 onClick={() => setSelectedVariantIdx(i)}
                 className={cn(
                   "whitespace-nowrap rounded-lg px-2 py-1 text-[10px] font-bold transition-colors",
-                  selectedVariantIdx === i 
-                    ? "bg-forest text-white" 
+                  selectedVariantIdx === i
+                    ? "bg-forest text-white"
                     : "bg-surface text-muted-foreground hover:bg-mint-soft"
                 )}
               >
@@ -247,7 +247,7 @@ export const ProductCard = ({
           )}
         </div>
 
-        
+
       </div>
     </TouchScale>
   );

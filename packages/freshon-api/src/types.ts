@@ -1,7 +1,7 @@
 // packages/freshon-api/src/types.ts
 // Canonical type definitions for the entire FreshOn ecosystem.
 // Derived from the Django backend models in apps/accounts, apps/inventory,
-// apps/orders, apps/delivery, apps/payment, and apps/wallet.
+// apps/orders, apps/delivery, apps/payment, and apps/pos.
 
 // ─── User & Auth ──────────────────────────────────────────────────────
 
@@ -597,6 +597,7 @@ export interface PosCartItem {
   weighed: boolean;
   quantity: number;
   member_eligible?: boolean;
+  gst_rate?: number;
 }
 
 export interface PosTender {
@@ -615,14 +616,39 @@ export interface PosCustomer {
   wallet_balance?: number;
 }
 
+export interface PosCompanyProfile {
+  id: string;
+  name: string;
+  gstin: string;
+  address?: string;
+  pan?: string;
+  email?: string;
+}
+
+export interface PosSettings {
+  pride_discount_pct: number;
+  rounding_enabled: boolean;
+  rounding_slab: number;
+  max_manual_discount_pct: number;
+}
+
 export interface PosOrderRequest {
-  customer_id: string;
+  customer_id?: string;
   items: PosCartItem[];
   tenders: PosTender[];
   subtotal: number;
   member_discount: number;
+  manual_discount_percentage?: number;
+  manual_discount_amount?: number;
+  discount_reason?: string;
+  discount_applied_by_id?: string;
   surcharge: number;
+  rounding_adjustment?: number;
   total: number;
+  receipt_delivery?: "Print" | "WhatsApp" | "SMS";
+  is_anonymous?: boolean;
+  is_b2b?: boolean;
+  company_id?: string;
 }
 
 export interface PosTransaction {
@@ -637,6 +663,16 @@ export interface PosTransaction {
   total: number;
   timestamp: number;
   receipt_delivery?: "Print" | "WhatsApp" | "SMS";
+  manual_discount_percentage?: number;
+  manual_discount_amount?: number;
+  discount_reason?: string;
+  discount_applied_by_id?: string;
+  discount_applied_by_name?: string;
+  rounding_adjustment?: number;
+  is_anonymous?: boolean;
+  is_b2b?: boolean;
+  company?: PosCompanyProfile;
+  invoice_number?: string;
 }
 
 export interface PosShift {
@@ -645,6 +681,7 @@ export interface PosShift {
   cash_sales: number;
   total_sales: number;
   txn_count: number;
+  rounding_loss?: number;
 }
 
 export interface PosShiftOpenRequest {

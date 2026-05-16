@@ -86,6 +86,7 @@ function buildReceiptText(
   tx: any, customer: any, pride: boolean,
   gstBuckets: GstBucket[], totalGst: number,
   isReturn: boolean, potentialSavings: number, actualSavings: number,
+  isAnonymous: boolean, isB2b: boolean, company: any, invoiceNumber: string,
 ) {
   const lines: string[] = [];
   const p = (s: string) => lines.push(s);
@@ -98,16 +99,31 @@ function buildReceiptText(
   p("[C]GSTIN: 29AADCE6858N3ZS");
   p("[HR]");
   p("[C][B]TAX INVOICE[b]");
+  if (invoiceNumber) {
+    p("[C]INV: " + invoiceNumber + "[c]");
+  }
   p("[HR][c]");
 
   // ─── Metadata (Left Label, Right Value) ───
   const txShort = String(tx.id).slice(0, 8).toUpperCase();
   const date = new Date(tx.timestamp).toLocaleString("en-GB");
-  p(leftRight(isReturn ? "REFUND NO:" : "INV NO:", txShort));
+  p(leftRight(isReturn ? "REFUND NO:" : "TXN NO:", txShort));
   p(leftRight("DATE:", date));
-  p(leftRight("CUSTOMER:", (customer?.name || "Walk-in")));
-  p(leftRight("PHONE:", (customer?.phone || "-")));
-  if (customer?.gstin) {
+
+  if (isAnonymous) {
+    p(leftRight("CUSTOMER:", "Anonymous"));
+    p(leftRight("PHONE:", "-"));
+  } else {
+    p(leftRight("CUSTOMER:", (customer?.name || "Walk-in")));
+    p(leftRight("PHONE:", (customer?.phone || "-")));
+  }
+
+  if (isB2b && company) {
+    p(leftRight("COMPANY:", company.name));
+    p(leftRight("GSTIN:", company.gstin));
+  }
+
+  if (customer?.gstin && !isB2b) {
     p(leftRight("CUST GST:", customer.gstin));
   }
 
@@ -140,8 +156,14 @@ function buildReceiptText(
   if (tx.memberDiscount > 0) {
     p(leftRight("PRIDE DISCOUNT", "-" + tx.memberDiscount.toFixed(2)));
   }
+  if (tx.manualDiscountAmount > 0) {
+    p(leftRight("MANUAL DISCOUNT (" + tx.manualDiscountPercentage + "%)", "-" + tx.manualDiscountAmount.toFixed(2)));
+  }
   if (tx.surcharge > 0) {
     p(leftRight("SODEXO +5%", tx.surcharge.toFixed(2)));
+  }
+  if (tx.roundingAdjustment > 0) {
+    p(leftRight("ROUNDING", tx.roundingAdjustment.toFixed(2)));
   }
   p("[HR3]");
   p("[H][B]" + leftRight("NET AMOUNT", "Rs." + tx.total.toLocaleString("en-IN")) + "[b][h]");
@@ -175,15 +197,17 @@ function buildReceiptText(
   p("");
 
   // ─── PRIDE Nudge ───
-  p("[HR]");
-  p("[C][B]--- YOUR SAVINGS ---[b][c]");
-  if (pride) {
-    p("[C][B]YOU SAVED Rs." + actualSavings.toFixed(2) + " WITH PRIDE![b][c]");
-  } else {
-    p("[C]JOIN PRIDE TO HAVE SAVED[c]");
-    p("[C][B]Rs." + potentialSavings.toFixed(0) + " ON THIS BILL![b][c]");
+  if (!isAnonymous) {
+    p("[HR]");
+    p("[C][B]--- YOUR SAVINGS ---[b][c]");
+    if (pride) {
+      p("[C][B]YOU SAVED Rs." + actualSavings.toFixed(2) + " WITH PRIDE![b][c]");
+    } else {
+      p("[C]JOIN PRIDE TO HAVE SAVED[c]");
+      p("[C][B]Rs." + potentialSavings.toFixed(0) + " ON THIS BILL![b][c]");
+    }
+    p("[HR]");
   }
-  p("[HR]");
   // ─── Footer (SMALL) ───
   p("");
   p("[C][B]THANK YOU![b][c]");
@@ -207,6 +231,9 @@ export default function ReceiptModal() {
   const setStage = usePos((s) => s.setStage);
   const setDelivery = usePos((s) => s.setReceiptDelivery);
   const clearReturn = usePos((s) => s.clearReturn);
+  const selectedCompany = usePos((s) => s.selectedCompany);
+  const isAnonymous = usePos((s) => s.isAnonymous);
+  const isB2b = usePos((s) => s.isB2b);
 
   const receiptRef = useRef<HTMLDivElement>(null);
   const [paperless, setPaperless] = useState(false);
@@ -242,6 +269,10 @@ export default function ReceiptModal() {
       const text = buildReceiptText(
         tx, customer, pride, gstBuckets, totalGst,
         isReturn, potentialSavings, actualSavings,
+        tx.isAnonymous ?? isAnonymous,
+        tx.isB2b ?? isB2b,
+        selectedCompany,
+        tx.invoiceNumber ?? "",
       );
       console.log("Sending to printer:", selectedPrinter);
       await invoke("print_receipt", {
@@ -330,6 +361,11 @@ export default function ReceiptModal() {
               <div style={{ fontSize: 10 }}>Mallathalli, Bengaluru-560056</div>
               <div style={{ fontSize: 10, marginTop: 3 }}>GSTIN: 29AADCE6858N3ZS</div>
               <div style={{ ...bold, fontSize: 15, marginTop: 6, letterSpacing: 1 }}>TAX INVOICE</div>
+              {(tx.invoiceNumber || isB2b) && (
+                <div style={{ fontSize: 11, marginTop: 3, fontWeight: "bold" }}>
+                  {tx.invoiceNumber || selectedCompany?.gstin || ""}
+                </div>
+              )}
             </div>
 
             {isReturn && (
@@ -341,7 +377,7 @@ export default function ReceiptModal() {
             {/* ─── Txn Details ─── */}
             <div style={{ fontSize: 12, marginBottom: 4 }}>
               <div style={flexBetween}>
-                <span>{isReturn ? "REFUND NO:" : "INVOICE NO:"}</span>
+                <span>{isReturn ? "REFUND NO:" : "TXN NO:"}</span>
                 <span style={bold}>{txIdShort}…</span>
               </div>
               <div style={flexBetween}>
@@ -350,14 +386,27 @@ export default function ReceiptModal() {
               </div>
               <div style={flexBetween}>
                 <span>CUST:</span>
-                <span style={bold}>{customer?.name || "Walk-in"}</span>
+                <span style={bold}>
+                  {(tx.isAnonymous ?? isAnonymous) ? "Anonymous" : (customer?.name || "Walk-in")}
+                </span>
               </div>
               <div style={flexBetween}>
                 <span>PHONE:</span>
-                <span>{customer?.phone || "-"}</span>
+                <span>{(tx.isAnonymous ?? isAnonymous) ? "-" : (customer?.phone || "-")}</span>
               </div>
-              {/* Replace TIER with GST */}
-              {customer?.gstin && (
+              {(tx.isB2b ?? isB2b) && selectedCompany && (
+                <>
+                  <div style={flexBetween}>
+                    <span>COMPANY:</span>
+                    <span style={bold}>{selectedCompany.name}</span>
+                  </div>
+                  <div style={flexBetween}>
+                    <span>GSTIN:</span>
+                    <span style={bold}>{selectedCompany.gstin}</span>
+                  </div>
+                </>
+              )}
+              {customer?.gstin && !(tx.isB2b ?? isB2b) && (
                 <div style={flexBetween}>
                   <span>CUST GST:</span>
                   <span style={bold}>{customer.gstin}</span>
@@ -422,10 +471,22 @@ export default function ReceiptModal() {
                 <span>−{tx.memberDiscount.toFixed(2)}</span>
               </div>
             )}
+            {tx.manualDiscountAmount > 0 && (
+              <div style={{ ...flexBetween, fontWeight: "bold", color: "#000" }}>
+                <span>MANUAL DISCOUNT ({tx.manualDiscountPercentage}%)</span>
+                <span>−{tx.manualDiscountAmount.toFixed(2)}</span>
+              </div>
+            )}
             {tx.surcharge > 0 && (
               <div style={{ ...flexBetween, fontWeight: "bold" }}>
                 <span>SODEXO +5%</span>
                 <span>{tx.surcharge.toFixed(2)}</span>
+              </div>
+            )}
+            {tx.roundingAdjustment > 0 && (
+              <div style={{ ...flexBetween, fontWeight: "bold" }}>
+                <span>ROUNDING</span>
+                <span>{tx.roundingAdjustment.toFixed(2)}</span>
               </div>
             )}
             <div style={{ ...flexBetween, fontWeight: "bold", fontSize: 12, borderTop: "1px solid #000", marginTop: 4, paddingTop: 4 }}>
@@ -475,18 +536,20 @@ export default function ReceiptModal() {
           <div style={borderBottomDashed} />
 
           {/* ─── PRIDE Nudge ─── */}
-          <div style={{ ...sectionDivider, textAlign: "center" }}>
-            <div style={{ ...bold, fontSize: 10, letterSpacing: 1, marginBottom: 3 }}>--- YOUR SAVINGS ---</div>
-            {pride ? (
-              <div style={{ fontSize: 11, fontWeight: "bold", color: "#000" }}>
-                YOU SAVED {formatINR(actualSavings)} WITH PRIDE!
-              </div>
-            ) : (
-              <div style={{ fontSize: 11, fontWeight: "bold", color: "#000" }}>
-                JOIN PRIDE TO HAVE SAVED {formatINR(potentialSavings)} ON THIS BILL!
-              </div>
-            )}
-          </div>
+          {!(tx.isAnonymous ?? isAnonymous) && (
+            <div style={{ ...sectionDivider, textAlign: "center" }}>
+              <div style={{ ...bold, fontSize: 10, letterSpacing: 1, marginBottom: 3 }}>--- YOUR SAVINGS ---</div>
+              {pride ? (
+                <div style={{ fontSize: 11, fontWeight: "bold", color: "#000" }}>
+                  YOU SAVED {formatINR(actualSavings)} WITH PRIDE!
+                </div>
+              ) : (
+                <div style={{ fontSize: 11, fontWeight: "bold", color: "#000" }}>
+                  JOIN PRIDE TO HAVE SAVED {formatINR(potentialSavings)} ON THIS BILL!
+                </div>
+              )}
+            </div>
+          )}
 
           {/* ─── Tenders ─── */}
           <div style={{ fontSize: 10 }}>
@@ -548,9 +611,17 @@ export default function ReceiptModal() {
               {tx.memberDiscount > 0 && (
                 <div className="mt-1 font-mono font-bold text-xs text-accent">PRIDE Saved {formatINR(tx.memberDiscount)}</div>
               )}
+              {tx.manualDiscountAmount > 0 && (
+                <div className="mt-1 font-mono font-bold text-xs text-primary">Discount Saved {formatINR(tx.manualDiscountAmount)}</div>
+              )}
               {tx.bharatpeTxnId && (
                 <div className="mt-1 font-mono font-bold text-[10px] text-muted-foreground">
                   BharatPe: {tx.bharatpeTxnId}
+                </div>
+              )}
+              {tx.invoiceNumber && (
+                <div className="mt-1 font-mono font-bold text-[10px] text-muted-foreground">
+                  Invoice: {tx.invoiceNumber}
                 </div>
               )}
             </div>
@@ -585,7 +656,7 @@ export default function ReceiptModal() {
                     <Smartphone size={16} /> {sent === "SMS" ? "SENT" : sending && chosen === "SMS" ? "..." : "SMS"}
                   </button>
                   <div className="col-span-2 font-mono font-bold text-[10px] text-muted-foreground text-center">
-                    {sent ? `Sent to ${customer?.phone}` : `Will send to ${customer?.phone}`}
+                    {sent ? `Sent to ${(tx.isAnonymous ?? isAnonymous) ? "***" : customer?.phone}` : `Will send to ${(tx.isAnonymous ?? isAnonymous) ? "***" : customer?.phone}`}
                   </div>
                 </div>
               )}

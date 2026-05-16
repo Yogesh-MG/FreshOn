@@ -9,7 +9,7 @@ import {
 import {
   Banknote, Smartphone, CreditCard, Sparkles, X, AlertTriangle,
   SplitSquareHorizontal, Plus, Trash2, Loader2, CheckCircle2, QrCode,
-  WifiOff, XCircle, ShieldCheck, Wallet,
+  WifiOff, XCircle, ShieldCheck, Wallet, Tag, CircleDot, Building2,
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 
@@ -35,6 +35,22 @@ export default function PaymentDrawer() {
   const pay = usePos((s) => s.pay);
   const loading = usePos((s) => s.loading);
   const error = usePos((s) => s.error);
+  const posSettings = usePos((s) => s.posSettings);
+  const manualDiscountPercentage = usePos((s) => s.manualDiscountPercentage);
+  const manualDiscountAmount = usePos((s) => s.manualDiscountAmount);
+  const discountReason = usePos((s) => s.discountReason);
+  const applyManualDiscount = usePos((s) => s.applyManualDiscount);
+  const clearManualDiscount = usePos((s) => s.clearManualDiscount);
+  const roundingEnabled = usePos((s) => s.roundingEnabled);
+  const setRoundingEnabled = usePos((s) => s.setRoundingEnabled);
+  const isB2b = usePos((s) => s.isB2b);
+  const setB2b = usePos((s) => s.setB2b);
+  const companies = usePos((s) => s.companies);
+  const selectedCompany = usePos((s) => s.selectedCompany);
+  const selectCompany = usePos((s) => s.selectCompany);
+  const fetchCompanies = usePos((s) => s.fetchCompanies);
+  const createCompany = usePos((s) => s.createCompany);
+  const isAnonymous = usePos((s) => s.isAnonymous);
 
   const [split, setSplit] = useState(false);
   const [method, setMethod] = useState<PaymentMethod>("Cash");
@@ -63,14 +79,41 @@ export default function PaymentDrawer() {
   const [activeSplitIdx, setActiveSplitIdx] = useState<number | null>(null);
   const splitPollCancelRef = useRef(false);
 
+  // ── Modals ──
+  const [showDiscountModal, setShowDiscountModal] = useState(false);
+  const [discountInput, setDiscountInput] = useState("");
+  const [discountReasonInput, setDiscountReasonInput] = useState("");
+  const [showB2bModal, setShowB2bModal] = useState(false);
+  const [b2bSearch, setB2bSearch] = useState("");
+  const [showAddCompany, setShowAddCompany] = useState(false);
+  const [newCompany, setNewCompany] = useState({ name: "", gstin: "", address: "", pan: "", email: "" });
+
   const pride = !!customer?.pride;
   const subtotal = subtotalOf(cart, pride);
-  const singleSurcharge = method === "Sodexo" ? +(subtotal * 0.05).toFixed(2) : 0;
-  const singleTotal = +(subtotal + singleSurcharge).toFixed(2);
+  const afterMemberDiscount = subtotal - manualDiscountAmount;
+
+  const singleSurcharge = method === "Sodexo" ? +(afterMemberDiscount * 0.05).toFixed(2) : 0;
+  const singleRounding = roundingEnabled && posSettings?.rounding_enabled
+    ? (() => {
+        const slab = posSettings.rounding_slab || 5;
+        const raw = +(afterMemberDiscount + singleSurcharge).toFixed(2);
+        const rounded = Math.ceil(raw / slab) * slab;
+        return +(rounded - raw).toFixed(2);
+      })()
+    : 0;
+  const singleTotal = +(afterMemberDiscount + singleSurcharge + singleRounding).toFixed(2);
 
   const splitSodexo = splitTenders.filter((t) => t.method === "Sodexo").reduce((s, t) => s + t.amount, 0);
   const splitSurcharge = +(splitSodexo * 0.05).toFixed(2);
-  const splitTotalDue = +(subtotal + splitSurcharge).toFixed(2);
+  const splitRawTotal = +(afterMemberDiscount + splitSurcharge).toFixed(2);
+  const splitRounding = roundingEnabled && posSettings?.rounding_enabled
+    ? (() => {
+        const slab = posSettings.rounding_slab || 5;
+        const rounded = Math.ceil(splitRawTotal / slab) * slab;
+        return +(rounded - splitRawTotal).toFixed(2);
+      })()
+    : 0;
+  const splitTotalDue = +(splitRawTotal + splitRounding).toFixed(2);
   const splitPaid = splitTenders.reduce((s, t) => s + t.amount, 0);
   const splitRemaining = +(splitTotalDue - splitPaid).toFixed(2);
 
@@ -223,6 +266,30 @@ export default function PaymentDrawer() {
     return true;
   }, [loading, split, splitRemaining, hasUnverifiedDigital, method, bpStep, walletInsufficient]);
 
+  // ── Discount application ──
+  const handleApplyDiscount = () => {
+    const pct = parseFloat(discountInput);
+    if (isNaN(pct) || pct < 0 || pct > 5) {
+      // Allow up to 5% by default; manager override can go higher if backend allows
+      return;
+    }
+    applyManualDiscount(pct, discountReasonInput || "Manual discount");
+    setShowDiscountModal(false);
+    setDiscountInput("");
+    setDiscountReasonInput("");
+  };
+
+  // ── B2B company creation ──
+  const handleCreateCompany = async () => {
+    if (!newCompany.name || !newCompany.gstin) return;
+    const company = await createCompany(newCompany);
+    if (company) {
+      selectCompany(company);
+      setShowAddCompany(false);
+      setNewCompany({ name: "", gstin: "", address: "", pan: "", email: "" });
+    }
+  };
+
   // ── Shared UI helpers ──
   const Btn = ({ m, label, special, active, onClick, disabled }: {
     m: PaymentMethod; label: ReactNode; special?: boolean; active: boolean; onClick: () => void; disabled?: boolean;
@@ -308,6 +375,10 @@ export default function PaymentDrawer() {
     return <Loader2 size={14} className="animate-spin text-accent"/>;
   };
 
+  const filteredCompanies = companies.filter(
+    (c) => c.name.toLowerCase().includes(b2bSearch.toLowerCase()) || c.gstin.toLowerCase().includes(b2bSearch.toLowerCase())
+  );
+
   return (
     <div className="fixed inset-0 bg-foreground/80 flex items-center justify-center z-50">
       <div className="border-sharp-3 bg-card w-[720px] max-h-[720px] overflow-y-auto scrollbar-sharp" style={{ boxShadow: "10px 10px 0 0 hsl(var(--foreground))" }}>
@@ -326,6 +397,28 @@ export default function PaymentDrawer() {
         </div>
 
         <div className="p-5">
+          {/* ── Feature Toggles Row ── */}
+          <div className="grid grid-cols-3 gap-2 mb-4">
+            <button onClick={() => setShowDiscountModal(true)}
+              className={`pressable border-2 border-foreground py-2 font-extrabold text-[10px] tracking-widest flex items-center justify-center gap-1
+                ${manualDiscountAmount > 0 ? "bg-accent text-accent-foreground" : "bg-card hover:bg-secondary"}`}>
+              <Tag size={14}/> DISCOUNT {manualDiscountAmount > 0 ? `${manualDiscountPercentage}%` : ""}
+            </button>
+            <button onClick={() => setRoundingEnabled(!roundingEnabled)}
+              className={`pressable border-2 border-foreground py-2 font-extrabold text-[10px] tracking-widest flex items-center justify-center gap-1 transition-all duration-200
+                ${roundingEnabled ? "bg-accent text-accent-foreground" : "bg-card hover:bg-secondary"}`}>
+              <CircleDot size={14}/> ROUND {roundingEnabled ? "ON" : "OFF"}
+            </button>
+            <button onClick={() => {
+              if (!isB2b) { setShowB2bModal(true); fetchCompanies(); }
+              else { setB2b(false); selectCompany(null); }
+            }}
+              className={`pressable border-2 border-foreground py-2 font-extrabold text-[10px] tracking-widest flex items-center justify-center gap-1
+                ${isB2b ? "bg-primary text-primary-foreground" : "bg-card hover:bg-secondary"}`}>
+              <Building2 size={14}/> B2B {isB2b ? "ON" : "OFF"}
+            </button>
+          </div>
+
           {!split ? (
             <>
               <div className="text-[11px] font-extrabold uppercase tracking-widest mb-2">Select Method</div>
@@ -434,12 +527,28 @@ export default function PaymentDrawer() {
               <span className="font-extrabold uppercase text-sm tracking-wider">Subtotal {pride && <span className="text-accent">· PRIDE</span>}</span>
               <span className="font-mono font-extrabold text-lg tabular-nums">{formatINR(subtotal)}</span>
             </div>
+            {manualDiscountAmount > 0 && (
+              <div className="flex items-center justify-between px-4 py-2 border-b-2 border-foreground bg-accent text-accent-foreground">
+                <span className="font-extrabold uppercase text-sm tracking-wider flex items-center gap-2">
+                  <Tag size={14}/> Manual Discount ({manualDiscountPercentage}%)
+                </span>
+                <span className="font-mono font-extrabold text-lg tabular-nums">−{formatINR(manualDiscountAmount)}</span>
+              </div>
+            )}
             {(split ? splitSurcharge : singleSurcharge) > 0 && (
               <div className="flex items-center justify-between px-4 py-2 border-b-2 border-foreground bg-destructive text-destructive-foreground">
                 <span className="font-extrabold uppercase text-sm tracking-wider flex items-center gap-2">
                   <AlertTriangle size={16}/> Sodexo Surcharge (+5%)
                 </span>
                 <span className="font-mono font-extrabold text-lg tabular-nums">+{formatINR(split ? splitSurcharge : singleSurcharge)}</span>
+              </div>
+            )}
+            {(split ? splitRounding : singleRounding) > 0 && (
+              <div className="flex items-center justify-between px-4 py-2 border-b-2 border-foreground bg-warning text-warning-foreground">
+                <span className="font-extrabold uppercase text-sm tracking-wider flex items-center gap-2">
+                  <CircleDot size={14}/> Rounding Adjustment
+                </span>
+                <span className="font-mono font-extrabold text-lg tabular-nums">+{formatINR(split ? splitRounding : singleRounding)}</span>
               </div>
             )}
             <div className="flex items-end justify-between px-4 py-3 bg-foreground text-background">
@@ -474,6 +583,127 @@ export default function PaymentDrawer() {
           </div>
         </div>
       </div>
+
+      {/* ── Discount Modal ── */}
+      {showDiscountModal && (
+        <div className="fixed inset-0 bg-foreground/80 flex items-center justify-center z-[60]">
+          <div className="border-sharp-3 bg-card w-[400px]" style={{ boxShadow: "10px 10px 0 0 hsl(var(--foreground))" }}>
+            <div className="flex items-center justify-between bg-foreground text-background px-4 py-3 border-b-2 border-foreground">
+              <h3 className="text-lg font-extrabold uppercase tracking-tight">Apply Discount</h3>
+              <button onClick={() => setShowDiscountModal(false)} className="border-2 border-background p-1 hover:bg-destructive"><X size={16}/></button>
+            </div>
+            <div className="p-4 space-y-3">
+              <div className="text-[10px] font-extrabold uppercase tracking-widest text-muted-foreground">Max {posSettings?.max_manual_discount_pct ?? 5}% without manager override</div>
+              <div>
+                <label className="text-[10px] font-extrabold uppercase tracking-widest">Discount %</label>
+                <input type="number" inputMode="decimal" value={discountInput} max={5} min={0} step={0.1}
+                  onChange={(e) => setDiscountInput(e.target.value)}
+                  placeholder="0.0 - 5.0"
+                  className="w-full border-2 border-foreground bg-background px-3 py-2 font-mono font-bold text-base outline-none focus:border-primary mt-1"/>
+              </div>
+              <div>
+                <label className="text-[10px] font-extrabold uppercase tracking-widest">Reason</label>
+                <input type="text" value={discountReasonInput}
+                  onChange={(e) => setDiscountReasonInput(e.target.value)}
+                  placeholder="e.g. Damaged packaging"
+                  className="w-full border-2 border-foreground bg-background px-3 py-2 font-bold text-sm outline-none focus:border-primary mt-1"/>
+              </div>
+              {manualDiscountAmount > 0 && (
+                <div className="flex items-center justify-between px-3 py-2 bg-accent text-accent-foreground border-2 border-foreground">
+                  <span className="font-extrabold text-[10px] uppercase">Current Discount</span>
+                  <span className="font-mono font-extrabold">{formatINR(manualDiscountAmount)}</span>
+                </div>
+              )}
+              <div className="grid grid-cols-2 gap-2">
+                <button onClick={clearManualDiscount} className="pressable border-2 border-foreground bg-card h-12 font-extrabold text-xs tracking-widest">CLEAR</button>
+                <button onClick={handleApplyDiscount} disabled={!discountInput || parseFloat(discountInput) > (posSettings?.max_manual_discount_pct ?? 5)}
+                  className="pressable-primary bg-primary text-primary-foreground border-2 border-foreground h-12 font-extrabold text-xs tracking-widest disabled:opacity-50">
+                  APPLY
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── B2B Company Modal ── */}
+      {showB2bModal && (
+        <div className="fixed inset-0 bg-foreground/80 flex items-center justify-center z-[60]">
+          <div className="border-sharp-3 bg-card w-[480px] max-h-[600px] overflow-y-auto scrollbar-sharp" style={{ boxShadow: "10px 10px 0 0 hsl(var(--foreground))" }}>
+            <div className="flex items-center justify-between bg-foreground text-background px-4 py-3 border-b-2 border-foreground">
+              <h3 className="text-lg font-extrabold uppercase tracking-tight">B2B Company</h3>
+              <button onClick={() => setShowB2bModal(false)} className="border-2 border-background p-1 hover:bg-destructive"><X size={16}/></button>
+            </div>
+            <div className="p-4 space-y-3">
+              {!showAddCompany ? (
+                <>
+                  <input type="text" value={b2bSearch}
+                    onChange={(e) => setB2bSearch(e.target.value)}
+                    placeholder="Search companies..."
+                    className="w-full border-2 border-foreground bg-background px-3 py-2 font-bold text-sm outline-none focus:border-primary"/>
+                  <div className="border-2 border-foreground bg-background max-h-60 overflow-y-auto scrollbar-sharp">
+                    {filteredCompanies.length === 0 && (
+                      <div className="p-4 text-center text-muted-foreground font-bold text-xs uppercase">No companies found</div>
+                    )}
+                    {filteredCompanies.map((c) => (
+                      <button key={c.id} onClick={() => { selectCompany(c); setB2b(true); setShowB2bModal(false); }}
+                        className={`w-full px-3 py-2 text-left border-b-2 border-foreground last:border-b-0 hover:bg-primary hover:text-primary-foreground flex items-center justify-between
+                          ${selectedCompany?.id === c.id ? "bg-primary text-primary-foreground" : ""}`}>
+                        <div>
+                          <div className="font-extrabold text-sm">{c.name}</div>
+                          <div className="font-mono text-[10px] font-bold">{c.gstin}</div>
+                        </div>
+                        {selectedCompany?.id === c.id && <CheckCircle2 size={14}/>}
+                      </button>
+                    ))}
+                  </div>
+                  <button onClick={() => setShowAddCompany(true)}
+                    className="pressable w-full bg-accent text-accent-foreground border-2 border-foreground h-12 font-extrabold text-xs tracking-widest flex items-center justify-center gap-1">
+                    <Plus size={14}/> ADD NEW COMPANY
+                  </button>
+                </>
+              ) : (
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-[10px] font-extrabold uppercase tracking-widest">Company Name</label>
+                    <input type="text" value={newCompany.name} onChange={(e) => setNewCompany({ ...newCompany, name: e.target.value })}
+                      className="w-full border-2 border-foreground bg-background px-3 py-2 font-bold text-sm outline-none focus:border-primary mt-1"/>
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-extrabold uppercase tracking-widest">GSTIN</label>
+                    <input type="text" value={newCompany.gstin} onChange={(e) => setNewCompany({ ...newCompany, gstin: e.target.value })}
+                      className="w-full border-2 border-foreground bg-background px-3 py-2 font-mono font-bold text-sm outline-none focus:border-primary mt-1"/>
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-extrabold uppercase tracking-widest">Address</label>
+                    <input type="text" value={newCompany.address} onChange={(e) => setNewCompany({ ...newCompany, address: e.target.value })}
+                      className="w-full border-2 border-foreground bg-background px-3 py-2 font-bold text-sm outline-none focus:border-primary mt-1"/>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[10px] font-extrabold uppercase tracking-widest">PAN</label>
+                      <input type="text" value={newCompany.pan} onChange={(e) => setNewCompany({ ...newCompany, pan: e.target.value })}
+                        className="w-full border-2 border-foreground bg-background px-3 py-2 font-mono font-bold text-sm outline-none focus:border-primary mt-1"/>
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-extrabold uppercase tracking-widest">Email</label>
+                      <input type="email" value={newCompany.email} onChange={(e) => setNewCompany({ ...newCompany, email: e.target.value })}
+                        className="w-full border-2 border-foreground bg-background px-3 py-2 font-bold text-sm outline-none focus:border-primary mt-1"/>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button onClick={() => setShowAddCompany(false)} className="pressable border-2 border-foreground bg-card h-12 font-extrabold text-xs tracking-widest">BACK</button>
+                    <button onClick={handleCreateCompany} disabled={!newCompany.name || !newCompany.gstin}
+                      className="pressable-primary bg-primary text-primary-foreground border-2 border-foreground h-12 font-extrabold text-xs tracking-widest disabled:opacity-50">
+                      CREATE
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

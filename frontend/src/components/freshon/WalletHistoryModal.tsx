@@ -19,7 +19,7 @@ export const WalletHistoryModal = ({ onClose }: WalletHistoryModalProps) => {
   const { data: history, isLoading } = useQuery({
     queryKey: ["wallet", "history"],
     queryFn: async () => {
-      const res = await api.get("/api/wallet/wallet/history/");
+      const res = await api.get("/api/wallet/history/");
       return res.data;
     },
   });

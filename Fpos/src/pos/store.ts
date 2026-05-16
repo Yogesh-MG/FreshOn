@@ -12,6 +12,8 @@ import type {
   PosCustomer,
   PosTransaction,
   PosShiftSummary,
+  PosSettings,
+  PosCompanyProfile,
 } from "@freshon/api";
 
 // ─── Local-only UI Types ──────────────────────────────────────────────
@@ -81,13 +83,20 @@ export interface Transaction {
   method: PaymentMethod | "Split";
   subtotal: number;
   memberDiscount: number;
+  manualDiscountPercentage: number;
+  manualDiscountAmount: number;
+  discountReason: string;
   surcharge: number;
+  roundingAdjustment: number;
   total: number;
   timestamp: number;
   receiptDelivery?: "Print" | "WhatsApp" | "SMS";
   bharatpeTxnId?: string;
   transactionType?: "SALE" | "RETURN";
   relatedTransactionId?: string;
+  isAnonymous?: boolean;
+  isB2b?: boolean;
+  invoiceNumber?: string;
 }
 
 export interface ReturnItem {
@@ -110,7 +119,7 @@ export interface LookedUpTransaction {
   customerName?: string;
 }
 
-export const PRIDE_DISCOUNT_PCT = 0.10;
+export const PRIDE_DISCOUNT_PCT = 0.30;
 
 // ─── Derived Helpers ──────────────────────────────────────────────────
 
@@ -177,11 +186,23 @@ interface PosState {
   // Data (from backend)
   products: PosProduct[];
   productsLoading: boolean;
+  posSettings: PosSettings | null;
 
   // Customer
   selectedCustomer: PosCustomer | null;
   customerSearchResults: PosCustomer[];
   customerSearching: boolean;
+  isAnonymous: boolean;
+  setAnonymous: (v: boolean) => void;
+
+  // B2B
+  isB2b: boolean;
+  selectedCompany: PosCompanyProfile | null;
+  companies: PosCompanyProfile[];
+  setB2b: (v: boolean) => void;
+  selectCompany: (c: PosCompanyProfile | null) => void;
+  fetchCompanies: () => Promise<void>;
+  createCompany: (data: { name: string; gstin: string; address?: string; pan?: string; email?: string }) => Promise<PosCompanyProfile | null>;
 
   // Cart
   cart: CartItem[];
@@ -196,6 +217,18 @@ interface PosState {
   // Transaction / Receipt
   lastTransaction: Transaction | null;
   scanFlash: number;
+
+  // Manual Discount
+  manualDiscountPercentage: number;
+  manualDiscountAmount: number;
+  discountReason: string;
+  applyManualDiscount: (percent: number, reason: string) => void;
+  clearManualDiscount: () => void;
+
+  // Cash Rounding
+  roundingEnabled: boolean;
+  roundingAdjustment: number;
+  setRoundingEnabled: (v: boolean) => void;
 
   // Shift
   shift: Shift | null;
@@ -225,6 +258,9 @@ interface PosState {
 
   // Products
   fetchProducts: (params?: { category?: string; search?: string }) => Promise<void>;
+
+  // Settings
+  fetchPosSettings: () => Promise<void>;
 
   // Customer
   searchCustomer: (phone: string) => Promise<void>;
@@ -288,11 +324,41 @@ export const usePos = create<PosState>((set, get) => ({
   // Data
   products: [],
   productsLoading: false,
+  posSettings: null,
 
   // Customer
   selectedCustomer: null,
   customerSearchResults: [],
   customerSearching: false,
+  isAnonymous: false,
+  setAnonymous: (v) => set({ isAnonymous: v }),
+
+  // B2B
+  isB2b: false,
+  selectedCompany: null,
+  companies: [],
+  setB2b: (v) => set({ isB2b: v, selectedCompany: v ? get().selectedCompany : null }),
+  selectCompany: (c) => set({ selectedCompany: c }),
+  fetchCompanies: async () => {
+    try {
+      const companies = await pos.listCompanies();
+      set({ companies });
+    } catch (err: any) {
+      console.error("[POS] Failed to fetch companies:", err);
+    }
+  },
+  createCompany: async (data) => {
+    set({ loading: true, error: null });
+    try {
+      const company = await pos.createCompany(data);
+      set((s) => ({ companies: [...s.companies, company], loading: false }));
+      return company;
+    } catch (err: any) {
+      const message = err?.response?.data?.error || err?.message || "Failed to create company";
+      set({ error: message, loading: false });
+      return null;
+    }
+  },
 
   // Cart
   cart: [],
@@ -304,10 +370,27 @@ export const usePos = create<PosState>((set, get) => ({
   // Held Orders
   heldOrders: [],
 
-
   // Transaction
   lastTransaction: null,
   scanFlash: 0,
+
+  // Manual Discount
+  manualDiscountPercentage: 0,
+  manualDiscountAmount: 0,
+  discountReason: "",
+  applyManualDiscount: (percent, reason) => {
+    const { cart, selectedCustomer } = get();
+    const pride = !!selectedCustomer?.pride;
+    const subtotal = +subtotalOf(cart, pride).toFixed(2);
+    const amount = +(subtotal * (percent / 100)).toFixed(2);
+    set({ manualDiscountPercentage: percent, manualDiscountAmount: amount, discountReason: reason });
+  },
+  clearManualDiscount: () => set({ manualDiscountPercentage: 0, manualDiscountAmount: 0, discountReason: "" }),
+
+  // Cash Rounding
+  roundingEnabled: false,
+  roundingAdjustment: 0,
+  setRoundingEnabled: (v) => set({ roundingEnabled: v, roundingAdjustment: 0 }),
 
   // Shift
   shift: null,
@@ -331,6 +414,8 @@ export const usePos = create<PosState>((set, get) => ({
         stage: "shift-open",
         loading: false,
       });
+      // Fetch settings after login
+      get().fetchPosSettings();
       return true;
     } catch (err: any) {
       const message =
@@ -355,6 +440,15 @@ export const usePos = create<PosState>((set, get) => ({
       shiftSummary: null,
       products: [],
       error: null,
+      posSettings: null,
+      isAnonymous: false,
+      isB2b: false,
+      selectedCompany: null,
+      manualDiscountPercentage: 0,
+      manualDiscountAmount: 0,
+      discountReason: "",
+      roundingEnabled: false,
+      roundingAdjustment: 0,
     });
   },
 
@@ -385,8 +479,10 @@ export const usePos = create<PosState>((set, get) => ({
         loading: false,
       });
 
-      // Auto-fetch products after opening shift
+      // Auto-fetch products and settings after opening shift
       get().fetchProducts();
+      get().fetchPosSettings();
+      get().fetchCompanies();
     } catch (err: any) {
       const message =
         err?.response?.data?.error || err?.message || "Failed to open shift";
@@ -426,6 +522,15 @@ export const usePos = create<PosState>((set, get) => ({
       mode: "sale",
       products: [],
       error: null,
+      posSettings: null,
+      isAnonymous: false,
+      isB2b: false,
+      selectedCompany: null,
+      manualDiscountPercentage: 0,
+      manualDiscountAmount: 0,
+      discountReason: "",
+      roundingEnabled: false,
+      roundingAdjustment: 0,
     });
   },
 
@@ -439,6 +544,17 @@ export const usePos = create<PosState>((set, get) => ({
     } catch (err: any) {
       console.error("[POS] Failed to fetch products:", err);
       set({ productsLoading: false });
+    }
+  },
+
+  // ── Settings ────────────────────────────────────────────────────────
+
+  fetchPosSettings: async () => {
+    try {
+      const settings = await pos.getPosSettings();
+      set({ posSettings: settings });
+    } catch (err: any) {
+      console.error("[POS] Failed to fetch settings:", err);
     }
   },
 
@@ -462,7 +578,7 @@ export const usePos = create<PosState>((set, get) => ({
     }
   },
 
-  selectCustomer: (c) => set({ selectedCustomer: c, customerSearchResults: [] }),
+  selectCustomer: (c) => set({ selectedCustomer: c, customerSearchResults: [], isAnonymous: false }),
 
   addCustomer: async (data) => {
     set({ loading: true, error: null });
@@ -630,20 +746,34 @@ export const usePos = create<PosState>((set, get) => ({
   setStage: (s) => set({ stage: s }),
 
   pay: async (tenders, bharatpeTxnId) => {
-    const { cart, selectedCustomer, shift } = get();
-    if (!selectedCustomer || cart.length === 0 || tenders.length === 0)
-      return null;
+    const { cart, selectedCustomer, shift, isAnonymous, isB2b, selectedCompany, manualDiscountPercentage, manualDiscountAmount, discountReason, roundingEnabled, posSettings } = get();
+    if (cart.length === 0 || tenders.length === 0) return null;
+    if (!isAnonymous && !selectedCustomer) return null;
 
-    const pride = !!selectedCustomer.pride;
+    const pride = !!selectedCustomer?.pride;
     const subtotal = +subtotalOf(cart, pride).toFixed(2);
     const gross = +grossSubtotalOf(cart).toFixed(2);
     const memberDiscount = +(gross - subtotal).toFixed(2);
+
+    // Manual discount is applied after PRIDE discount
+    const afterMemberDiscount = subtotal - manualDiscountAmount;
 
     const sodexoTender = tenders.find((t) => t.method === "Sodexo");
     const surchargeSimple = sodexoTender
       ? +(sodexoTender.amount * 0.05).toFixed(2)
       : 0;
-    const total = +(subtotal + surchargeSimple).toFixed(2);
+
+    // Cash rounding
+    let roundingAdjustment = 0;
+    const totalBeforeRounding = +(afterMemberDiscount + surchargeSimple).toFixed(2);
+    if (roundingEnabled && posSettings?.rounding_enabled) {
+      const slab = posSettings.rounding_slab || 5;
+      const roundedTotal = Math.ceil(totalBeforeRounding / slab) * slab;
+      roundingAdjustment = +(roundedTotal - totalBeforeRounding).toFixed(2);
+    }
+
+    const total = +(totalBeforeRounding + roundingAdjustment).toFixed(2);
+
     const cashAmt = tenders
       .filter((t) => t.method === "Cash")
       .reduce((s, t) => s + t.amount, 0);
@@ -652,6 +782,7 @@ export const usePos = create<PosState>((set, get) => ({
     const walletAmt = tenders
       .filter((t) => t.method === "Wallet")
       .reduce((s, t) => s + t.amount, 0);
+
     set({ loading: true, error: null });
 
     try {
@@ -663,6 +794,7 @@ export const usePos = create<PosState>((set, get) => ({
         weighed: i.weighed,
         quantity: i.quantity,
         member_eligible: i.memberEligible,
+        gst_rate: i.gstRate ?? 18,
       }));
 
       const sdkTenders = tenders.map((t) => ({
@@ -670,31 +802,49 @@ export const usePos = create<PosState>((set, get) => ({
         amount: t.amount,
       }));
 
+      // Determine discount applied by (current user if any discount)
+      const discountAppliedById = manualDiscountAmount > 0 ? get().user?.employeeId : undefined;
+
       // Submit to backend
       const backendTx = await pos.createOrder({
-        customer_id: String(selectedCustomer.id),
+        customer_id: selectedCustomer ? String(selectedCustomer.id) : "",
         items: sdkItems,
         tenders: sdkTenders,
         subtotal,
         member_discount: memberDiscount,
+        manual_discount_percentage: manualDiscountPercentage,
+        manual_discount_amount: manualDiscountAmount,
+        discount_reason: discountReason,
+        discount_applied_by_id: discountAppliedById,
         surcharge: surchargeSimple,
+        rounding_adjustment: roundingAdjustment,
         total,
+        is_anonymous: isAnonymous,
+        is_b2b: isB2b,
+        company_id: selectedCompany ? String(selectedCompany.id) : undefined,
       });
 
       // Build local transaction from backend response
       const tx: Transaction = {
         id: backendTx.id,
-        customerId: String(selectedCustomer.id),
+        customerId: selectedCustomer ? String(selectedCustomer.id) : "",
         items: cart,
         tenders,
         method,
         subtotal,
         memberDiscount,
+        manualDiscountPercentage,
+        manualDiscountAmount,
+        discountReason,
         surcharge: surchargeSimple,
+        roundingAdjustment,
         total,
         timestamp: backendTx.timestamp || Date.now(),
         receiptDelivery: "Print",
         bharatpeTxnId,
+        isAnonymous,
+        isB2b,
+        invoiceNumber: backendTx.invoice_number,
       };
 
       set((s) => ({
@@ -722,6 +872,15 @@ export const usePos = create<PosState>((set, get) => ({
             ? { ...p, stock: Math.max(0, +(p.stock - ci.quantity).toFixed(3)) }
             : p;
         }),
+        // Reset discount/rounding/B2B for next transaction
+        manualDiscountPercentage: 0,
+        manualDiscountAmount: 0,
+        discountReason: "",
+        roundingEnabled: false,
+        roundingAdjustment: 0,
+        isAnonymous: false,
+        isB2b: false,
+        selectedCompany: null,
       }));
 
       return tx;
@@ -882,7 +1041,11 @@ export const usePos = create<PosState>((set, get) => ({
         method: refundMethod,
         subtotal: -refundTotal,
         memberDiscount: 0,
+        manualDiscountPercentage: 0,
+        manualDiscountAmount: 0,
+        discountReason: "",
         surcharge: 0,
+        roundingAdjustment: 0,
         total: -refundTotal,
         timestamp: Date.now(),
         transactionType: "RETURN",
@@ -967,10 +1130,17 @@ export const usePos = create<PosState>((set, get) => ({
         method: (tx.method === "Split" ? "Split" : tx.method) as PaymentMethod | "Split",
         subtotal: Number(tx.subtotal),
         memberDiscount: Number(tx.member_discount),
+        manualDiscountPercentage: Number(tx.manual_discount_percentage ?? 0),
+        manualDiscountAmount: Number(tx.manual_discount_amount ?? 0),
+        discountReason: tx.discount_reason ?? "",
         surcharge: Number(tx.surcharge),
+        roundingAdjustment: Number(tx.rounding_adjustment ?? 0),
         total: Number(tx.total),
         timestamp: tx.timestamp || Date.now(),
         receiptDelivery: tx.receipt_delivery,
+        isAnonymous: tx.is_anonymous,
+        isB2b: tx.is_b2b,
+        invoiceNumber: tx.invoice_number,
       }));
     } catch {
       return [];

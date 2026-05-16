@@ -167,15 +167,6 @@ const Cart = () => {
           </div>
         )}
       </div>
-
-      {items.length > 0 && (
-        <div className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-background p-3 shadow-cta md:hidden">
-          <Link to="/checkout" className="flex h-14 items-center justify-between rounded-full bg-earth px-5 text-sm font-semibold text-earth-foreground">
-            <span>Checkout · ₹{total}</span>
-            <span>→</span>
-          </Link>
-        </div>
-      )}
     </PageShell>
   );
 };

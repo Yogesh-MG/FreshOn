@@ -10,7 +10,7 @@ export const WalletBalance = () => {
   const { data: wallet } = useQuery({
     queryKey: ["wallet", "balance"],
     queryFn: async () => {
-      const res = await api.get("/api/wallet/wallet/balance/");
+      const res = await api.get("/api/wallet/balance/");
       return res.data;
     },
     refetchInterval: 5000, // Poll every 5 seconds

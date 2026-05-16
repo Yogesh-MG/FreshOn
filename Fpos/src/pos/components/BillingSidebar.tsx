@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { usePos, formatINR, memberPriceOf, subtotalOf, grossSubtotalOf } from "../store";
-import { Plus, Trash2, UserPlus, Search, X, CreditCard, Trash, Sparkles, Loader2, PauseCircle, Layers } from "lucide-react";
+import { Plus, Trash2, UserPlus, Search, X, CreditCard, Trash, Sparkles, Loader2, PauseCircle, Layers, EyeOff, Building2 } from "lucide-react";
 import AddCustomerModal from "./AddCustomerModal";
 import HeldOrdersModal from "./HeldOrdersModal";
 
@@ -18,6 +18,10 @@ export default function BillingSidebar() {
   const setMode = usePos((s) => s.setMode);
   const holdCart = usePos((s) => s.holdCart);
   const heldCount = usePos((s) => s.heldOrders.length);
+  const isAnonymous = usePos((s) => s.isAnonymous);
+  const setAnonymous = usePos((s) => s.setAnonymous);
+  const isB2b = usePos((s) => s.isB2b);
+  const selectedCompany = usePos((s) => s.selectedCompany);
 
   const [phone, setPhone] = useState("");
   const [showAdd, setShowAdd] = useState(false);
@@ -29,7 +33,7 @@ export default function BillingSidebar() {
 
   // Debounced customer search
   useEffect(() => {
-    if (selected) return;
+    if (selected || isAnonymous) return;
     if (debounceRef.current) clearTimeout(debounceRef.current);
     if (phone.length >= 3) {
       debounceRef.current = setTimeout(() => {
@@ -40,11 +44,11 @@ export default function BillingSidebar() {
       clearCustomerSearch();
     }
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
-  }, [phone, selected, searchCustomer, clearCustomerSearch]);
+  }, [phone, selected, isAnonymous, searchCustomer, clearCustomerSearch]);
 
   // Auto-select / auto-register
   useEffect(() => {
-    if (selected) return;
+    if (selected || isAnonymous) return;
     // 1. Auto-select if exactly one match found
     if (customerSearchResults.length === 1 && phone.length >= 3) {
       selectCustomer(customerSearchResults[0]);
@@ -59,31 +63,30 @@ export default function BillingSidebar() {
     ) {
       setShowAdd(true);
     }
-  }, [customerSearchResults, customerSearching, phone, selected, selectCustomer]);
+  }, [customerSearchResults, customerSearching, phone, selected, isAnonymous, selectCustomer]);
 
   // Auto-transition to payment (only on new selection or first cart item)
   const currentStage = usePos((s) => s.stage);
   useEffect(() => {
-    const isNewSelection = selected && !prevSelectedId.current;
+    const isNewSelection = (selected || isAnonymous) && !prevSelectedId.current;
     const isNewCartItem = cart.length > 0 && prevCartLen.current === 0;
     if (
       (isNewSelection || isNewCartItem) &&
-      selected &&
+      (selected || isAnonymous) &&
       cart.length > 0 &&
       currentStage === "pos"
     ) {
       setStage("payment");
     }
-    prevSelectedId.current = selected?.id ? String(selected.id) : null;
+    prevSelectedId.current = selected?.id ? String(selected.id) : (isAnonymous ? "anonymous" : null);
     prevCartLen.current = cart.length;
-  }, [selected, cart.length, currentStage, setStage]);
+  }, [selected, isAnonymous, cart.length, currentStage, setStage]);
 
   const pride = !!selected?.pride;
   const subtotal = subtotalOf(cart, pride);
   const gross = grossSubtotalOf(cart);
   const memberSavings = +(gross - subtotal).toFixed(2);
-  const canPay = !!selected && cart.length > 0;
-
+  const canPay = (!!selected || isAnonymous) && cart.length > 0;
 
   return (
     <div className="h-full flex flex-col bg-card">
@@ -97,7 +100,7 @@ export default function BillingSidebar() {
             </button>
           )}
         </div>
-        {!selected ? (
+        {!selected && !isAnonymous ? (
           <>
             <div className="flex gap-2 relative">
               <div className="flex items-center px-2 bg-foreground text-background border-2 border-foreground">
@@ -133,26 +136,38 @@ export default function BillingSidebar() {
                 <button onClick={() => setShowAdd(true)} className="font-extrabold text-xs text-accent uppercase underline">Register New</button>
               </div>
             )}
+            <div className="mt-2 flex gap-2">
+              <button onClick={() => setAnonymous(true)}
+                className="pressable flex-1 bg-secondary text-secondary-foreground border-2 border-foreground py-1.5 font-extrabold text-[10px] tracking-widest flex items-center justify-center gap-1">
+                <EyeOff size={12}/> ANONYMOUS SALE
+              </button>
+            </div>
           </>
         ) : (
           <div className="border-2 border-primary bg-background p-3">
             <div className="flex items-start justify-between">
               <div>
-                <div className="font-extrabold text-lg leading-tight">{selected.name}</div>
-                <div className="font-mono font-bold text-xs">{selected.phone}</div>
+                <div className="font-extrabold text-lg leading-tight">
+                  {isAnonymous ? "Anonymous Customer" : selected?.name}
+                </div>
+                <div className="font-mono font-bold text-xs">
+                  {isAnonymous ? "No phone required" : selected?.phone}
+                </div>
               </div>
-              <button onClick={() => selectCustomer(null)} className="border-2 border-foreground bg-card hover:bg-destructive hover:text-destructive-foreground p-1">
+              <button onClick={() => { selectCustomer(null); setAnonymous(false); }} className="border-2 border-foreground bg-card hover:bg-destructive hover:text-destructive-foreground p-1">
                 <X size={16}/>
               </button>
             </div>
-            <div className="flex flex-wrap items-center gap-1.5 mt-2">
-              <span className="font-mono font-extrabold text-sm">{selected.points} PTS</span>
-              {selected.pride && (
-                <span className="px-2 py-1 text-[10px] font-extrabold border-2 border-foreground bg-accent text-accent-foreground flex items-center gap-1 animate-pulse">
-                  <Sparkles size={12}/> PRIDE MEMBER · 10% OFF
-                </span>
-              )}
-            </div>
+            {!isAnonymous && (
+              <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                <span className="font-mono font-extrabold text-sm">{selected?.points} PTS</span>
+                {selected?.pride && (
+                  <span className="px-2 py-1 text-[10px] font-extrabold border-2 border-foreground bg-accent text-accent-foreground flex items-center gap-1 animate-pulse">
+                    <Sparkles size={12}/> PRIDE MEMBER · 30% OFF
+                  </span>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -219,6 +234,12 @@ export default function BillingSidebar() {
             <span className="font-mono font-extrabold tabular-nums text-sm">−{formatINR(memberSavings)}</span>
           </div>
         )}
+        {isB2b && selectedCompany && (
+          <div className="flex items-center justify-between px-3 py-1.5 bg-primary text-primary-foreground border-b-2 border-foreground">
+            <span className="font-extrabold text-[10px] uppercase tracking-widest flex items-center gap-1"><Building2 size={12}/> B2B · {selectedCompany.name}</span>
+            <span className="font-mono font-extrabold tabular-nums text-[10px]">{selectedCompany.gstin}</span>
+          </div>
+        )}
         <div className="flex items-end justify-between px-3 py-2 bg-foreground text-background">
           <div>
             <div className="text-[10px] font-extrabold uppercase tracking-widest">Total Due</div>
@@ -241,9 +262,9 @@ export default function BillingSidebar() {
             <CreditCard size={22}/> PAY
           </button>
         </div>
-        {!selected && (
+        {!selected && !isAnonymous && (
           <div className="bg-warning text-warning-foreground text-center font-extrabold text-[11px] uppercase tracking-wider py-1 border-t-2 border-foreground">
-            Select Customer to Enable Payment
+            Select Customer or Enable Anonymous Sale to Pay
           </div>
         )}
       </div>

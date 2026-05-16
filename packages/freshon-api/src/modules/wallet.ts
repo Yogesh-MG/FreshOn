@@ -92,17 +92,17 @@ export async function getTopupHistory(): Promise<WalletTopup[]> {
  * GET /api/partnerships/my_partnership/
  */
 export async function getPartnership(): Promise<Partnership> {
-  const res = await getClient().get<Partnership>("/api/partnerships/my_partnership/");
+  const res = await getClient().get<Partnership>("/api/wallet/partnerships/my_partnership/");
   return res.data;
 }
 
 /**
  * Request a partnership refund (100% refundable with 1-month notice).
- * POST /api/partnerships/request_refund/
+ * POST /api/wallet/partnerships/request_refund/
  */
 export async function requestRefund(): Promise<{ message: string }> {
   const res = await getClient().post<{ message: string }>(
-    "/api/partnerships/request_refund/"
+    "/api/wallet/partnerships/request_refund/"
   );
   return res.data;
 }
@@ -111,20 +111,20 @@ export async function requestRefund(): Promise<{ message: string }> {
 
 /**
  * Get current user's referral list with total bonus earned.
- * GET /api/referrals/my_referrals/
+ * GET /api/wallet/referrals/my_referrals/
  */
 export async function getMyReferrals(): Promise<Referral[]> {
-  const res = await getClient().get<Referral[]>("/api/referrals/my_referrals/");
+  const res = await getClient().get<Referral[]>("/api/wallet/referrals/my_referrals/");
   return res.data;
 }
 
 /**
  * Get (or generate) the user's unique referral code and share link.
- * GET /api/referrals/referral_code/
+ * GET /api/wallet/referrals/referral_code/
  */
 export async function getReferralCode(): Promise<ReferralCodeResponse> {
   const res = await getClient().get<ReferralCodeResponse>(
-    "/api/referrals/referral_code/"
+    "/api/wallet/referrals/referral_code/"
   );
   return res.data;
 }

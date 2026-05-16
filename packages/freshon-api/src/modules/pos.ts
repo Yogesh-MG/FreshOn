@@ -14,6 +14,8 @@ import type {
   PosShiftSummary,
   PosWastageEntry,
   PosCustomer,
+  PosSettings,
+  PosCompanyProfile,
 } from "../types";
 
 // ─── Auth ─────────────────────────────────────────────────────────────
@@ -67,6 +69,17 @@ export async function getShiftSummary(): Promise<PosShiftSummary> {
   return res.data;
 }
 
+// ─── Settings ─────────────────────────────────────────────────────────
+
+/**
+ * Get POS terminal settings.
+ * GET /api/pos/settings/
+ */
+export async function getPosSettings(): Promise<PosSettings> {
+  const res = await getClient().get<PosSettings>("/api/pos/settings/");
+  return res.data;
+}
+
 // ─── Product Catalog ──────────────────────────────────────────────────
 
 /**
@@ -108,6 +121,32 @@ export async function addCustomer(data: {
   email?: string;
 }): Promise<PosCustomer> {
   const res = await getClient().post<PosCustomer>("/api/pos/customers/", data);
+  return res.data;
+}
+
+// ─── Company (B2B) ────────────────────────────────────────────────────
+
+/**
+ * List B2B companies.
+ * GET /api/pos/companies/
+ */
+export async function listCompanies(): Promise<PosCompanyProfile[]> {
+  const res = await getClient().get<PosCompanyProfile[]>("/api/pos/companies/");
+  return res.data;
+}
+
+/**
+ * Register a B2B company.
+ * POST /api/pos/companies/create/
+ */
+export async function createCompany(data: {
+  name: string;
+  gstin: string;
+  address?: string;
+  pan?: string;
+  email?: string;
+}): Promise<PosCompanyProfile> {
+  const res = await getClient().post<PosCompanyProfile>("/api/pos/companies/create/", data);
   return res.data;
 }
 
