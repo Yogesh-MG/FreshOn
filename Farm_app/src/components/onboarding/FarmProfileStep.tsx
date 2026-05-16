@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { StepHeader } from "../freshon/StepHeader";
 import { Icon } from "@/components/freshon/Icon";
 import { useUpdateProfile, useUploadMedia } from "@/hooks/useFarmer";
@@ -11,9 +12,10 @@ interface Props {
 }
 
 export const FarmProfileStep = ({ onNext, onBack }: Props) => {
+  const { t } = useTranslation();
   const [name, setName] = useState("");
   const [acres, setAcres] = useState("");
-  const [location, setLocation] = useState("Tap to pick on map");
+  const [location, setLocation] = useState(t("onboarding.tapToPick"));
   const [avatar, setAvatar] = useState<string | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -43,14 +45,14 @@ export const FarmProfileStep = ({ onNext, onBack }: Props) => {
       await updateProfile.mutateAsync({
         name,
         farm_name: `${name}'s Farm`,
-        location: location === "Tap to pick on map" ? "" : location,
+        location: location === t("onboarding.tapToPick") ? "" : location,
         total_acreage: Number(acres),
       });
       onNext();
     } catch (error) {
       toast({
-        title: "Profile not saved",
-        description: "Please try again.",
+        title: t("onboarding.profileNotSaved"),
+        description: t("common.tryAgain"),
         variant: "destructive",
       });
     }
@@ -67,14 +69,14 @@ export const FarmProfileStep = ({ onNext, onBack }: Props) => {
       transition={{ duration: 0.35 }}
       className="min-h-dvh md:min-h-[860px] flex flex-col"
     >
-      <StepHeader current={3} total={6} onBack={onBack} label="Farm Profile" />
+      <StepHeader current={3} total={6} onBack={onBack} label={t("onboarding.farmProfile")} />
 
       <div className="px-7 pt-8 flex-1 flex flex-col">
         <h2 className="text-3xl font-extrabold tracking-tight leading-tight">
-          Tell us about <span className="text-secondary">your land</span>
+          {t("onboarding.tellUs")} <span className="text-secondary">{t("onboarding.yourLand")}</span>
         </h2>
         <p className="mt-2 text-foreground/60 font-medium">
-          This is how customers will discover your farm.
+          {t("onboarding.discover")}
         </p>
 
         {/* Avatar */}
@@ -94,22 +96,22 @@ export const FarmProfileStep = ({ onNext, onBack }: Props) => {
             </span>
           </button>
           <p className="mt-3 text-xs font-semibold text-foreground/60 uppercase tracking-wider">
-            Profile picture
+            {t("onboarding.profilePicture")}
           </p>
         </div>
 
         {/* Form */}
         <div className="mt-7 space-y-3">
-          <Field label="Farmer name" icon="person">
+          <Field label={t("onboarding.farmerName")} icon="person">
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Ramesh Kumar"
+              placeholder={t("onboarding.namePlaceholder")}
               className="w-full bg-transparent outline-none text-base font-semibold text-foreground placeholder:text-foreground/30"
             />
           </Field>
 
-          <Field label="Total acreage" icon="landscape">
+          <Field label={t("onboarding.totalAcreage")} icon="landscape">
             <div className="flex items-baseline gap-2 w-full">
               <input
                 value={acres}
@@ -119,7 +121,7 @@ export const FarmProfileStep = ({ onNext, onBack }: Props) => {
                 className="flex-1 bg-transparent outline-none text-base font-semibold text-foreground placeholder:text-foreground/30 tabular-nums"
               />
               <span className="text-xs font-bold text-secondary uppercase tracking-wider">
-                acres
+                {t("onboarding.acresUnit")}
               </span>
             </div>
           </Field>
@@ -169,7 +171,7 @@ export const FarmProfileStep = ({ onNext, onBack }: Props) => {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-[10px] font-bold uppercase tracking-wider text-secondary">
-                  Farm location
+                  {t("onboarding.farmLocation")}
                 </p>
                 <p className="text-sm font-semibold text-foreground truncate">{location}</p>
                 <p className="text-[11px] text-foreground/50 font-medium tabular-nums">
@@ -188,7 +190,7 @@ export const FarmProfileStep = ({ onNext, onBack }: Props) => {
           disabled={!name || !acres || isSaving}
           className="w-full h-16 rounded-full bg-gradient-forest text-background font-semibold text-base shadow-deep flex items-center justify-center gap-2 disabled:opacity-40 tap mt-8 mb-6"
         >
-          {isSaving ? "Saving..." : "Continue"}
+          {isSaving ? t("onboarding.saveProfile") : t("onboarding.continue")}
           <Icon name="arrow_forward" weight={600} />
         </button>
       </div>

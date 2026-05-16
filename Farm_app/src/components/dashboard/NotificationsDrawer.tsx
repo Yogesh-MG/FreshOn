@@ -3,6 +3,7 @@ import { Icon } from "@/components/freshon/Icon";
 import { useNotifications, useMarkNotificationRead } from "@/hooks/useFarmer";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 
 const COLOR_MAP: Record<string, string> = {
   success: "bg-green-100 text-green-600",
@@ -18,7 +19,24 @@ const ICON_MAP: Record<string, string> = {
   info: "info",
 };
 
+const NOTIF_TYPE_ICON: Record<string, string> = {
+  new_order: "shopping_basket",
+  payment_credited: "account_balance_wallet",
+  quality_alert: "feedback",
+  pickup_scheduled: "local_shipping",
+  general: "notifications",
+};
+
+const NOTIF_TYPE_COLOR: Record<string, string> = {
+  new_order: "bg-secondary/10 text-secondary",
+  payment_credited: "bg-primary/10 text-primary",
+  quality_alert: "bg-destructive/10 text-destructive",
+  pickup_scheduled: "bg-blue-100 text-blue-600",
+  general: "bg-muted text-foreground/60",
+};
+
 export const NotificationsDrawer = ({ onClose }: { onClose: () => void }) => {
+  const { t } = useTranslation();
   const { data: notifications, isLoading } = useNotifications();
   const markRead = useMarkNotificationRead();
 
@@ -44,9 +62,9 @@ export const NotificationsDrawer = ({ onClose }: { onClose: () => void }) => {
         <div className="px-6 pb-4 flex items-center justify-between">
           <div>
             <p className="text-[10px] font-bold uppercase tracking-wider text-secondary">
-              Hub
+              {t("notifications.hub")}
             </p>
-            <h3 className="text-2xl font-extrabold tracking-tight">Notifications</h3>
+            <h3 className="text-2xl font-extrabold tracking-tight">{t("dashboard.notifications")}</h3>
           </div>
           <button
             onClick={() => {
@@ -55,7 +73,7 @@ export const NotificationsDrawer = ({ onClose }: { onClose: () => void }) => {
             }}
             className="text-xs font-bold text-primary tap"
           >
-            Mark all read
+            {t("dashboard.markAllRead")}
           </button>
         </div>
 
@@ -67,7 +85,7 @@ export const NotificationsDrawer = ({ onClose }: { onClose: () => void }) => {
           ) : notifications?.length === 0 ? (
             <div className="py-20 text-center opacity-40">
               <Icon name="notifications_off" className="text-4xl mb-2" />
-              <p className="text-xs font-bold uppercase tracking-widest">No notifications</p>
+              <p className="text-xs font-bold uppercase tracking-widest">{t("dashboard.noNotifications")}</p>
             </div>
           ) : (
             notifications?.map((n, i) => (
@@ -82,8 +100,8 @@ export const NotificationsDrawer = ({ onClose }: { onClose: () => void }) => {
                   !n.is_read && "bg-primary/5"
                 )}
               >
-                <div className={`size-11 rounded-xl shrink-0 flex items-center justify-center ${COLOR_MAP[n.type]}`}>
-                  <Icon name={ICON_MAP[n.type]} className="text-lg" filled />
+                <div className={`size-11 rounded-xl shrink-0 flex items-center justify-center ${NOTIF_TYPE_COLOR[n.notification_type || 'general'] || COLOR_MAP[n.type]}`}>
+                  <Icon name={NOTIF_TYPE_ICON[n.notification_type || 'general'] || ICON_MAP[n.type]} className="text-lg" filled />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2">
@@ -95,6 +113,15 @@ export const NotificationsDrawer = ({ onClose }: { onClose: () => void }) => {
                   <p className="text-xs text-foreground/70 font-medium leading-relaxed mt-0.5">
                     {n.message}
                   </p>
+                  {n.metadata && Object.keys(n.metadata).length > 0 && (
+                    <div className="mt-1.5 flex flex-wrap gap-1">
+                      {Object.entries(n.metadata).map(([k, v]) => (
+                        <span key={k} className="text-[10px] px-2 py-0.5 rounded-full bg-muted font-medium text-foreground/50">
+                          {k}: {String(v)}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </motion.div>
             ))

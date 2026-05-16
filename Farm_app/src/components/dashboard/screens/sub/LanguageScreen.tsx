@@ -1,32 +1,34 @@
 import { useProfile, useUpdateProfile } from "@/hooks/useFarmer";
 import { Icon } from "@/components/freshon/Icon";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
+import { useLanguageStore, SupportedLang } from "@/stores/languageStore";
 
 interface Props {
   onBack: () => void;
 }
 
-const LANGUAGES = [
+const LANGUAGES: { id: SupportedLang; name: string; native: string }[] = [
   { id: "en", name: "English", native: "English" },
   { id: "hi", name: "Hindi", native: "हिन्दी" },
   { id: "kn", name: "Kannada", native: "ಕನ್ನಡ" },
   { id: "te", name: "Telugu", native: "తెలుగు" },
-  { id: "ta", name: "Tamil", native: "தமிழ்" },
-  { id: "ml", name: "Malayalam", native: "മലയാളം" },
-  { id: "mr", name: "Marathi", native: "मराठी" },
 ];
 
 export const LanguageScreen = ({ onBack }: Props) => {
+  const { t, i18n } = useTranslation();
   const { data: profile } = useProfile();
   const updateProfile = useUpdateProfile();
-  const currentLang = profile?.preferred_language || "en";
+  const { setLang } = useLanguageStore();
+  const currentLang = (profile?.preferred_language as SupportedLang) || "en";
 
-  const handleSelect = async (id: string) => {
+  const handleSelect = async (id: SupportedLang) => {
     try {
       await updateProfile.mutateAsync({ preferred_language: id });
-      toast.success("Language preference updated");
+      setLang(id);
+      i18n.changeLanguage(id);
+      toast.success(t("profile.language") + " preference updated");
       onBack();
     } catch (error) {
       toast.error("Failed to update language");
@@ -39,12 +41,12 @@ export const LanguageScreen = ({ onBack }: Props) => {
         <button onClick={onBack} className="size-10 rounded-xl glass flex items-center justify-center tap">
           <Icon name="arrow_back" />
         </button>
-        <h1 className="text-xl font-bold">Language / भाषा</h1>
+        <h1 className="text-xl font-bold">{t("profile.languageTitle")}</h1>
       </header>
 
       <main className="flex-1 overflow-y-auto p-5 space-y-3">
         <p className="text-xs font-bold uppercase tracking-widest text-foreground/40 mb-4 px-1">
-          Select your preferred language
+          {t("profile.selectLanguage")}
         </p>
         
         <div className="grid gap-3">
@@ -75,7 +77,7 @@ export const LanguageScreen = ({ onBack }: Props) => {
 
       <footer className="p-10 text-center opacity-30">
         <Icon name="translate" className="text-4xl mb-2" />
-        <p className="text-[10px] font-bold uppercase tracking-wider">Multilingual Dashboard</p>
+        <p className="text-[10px] font-bold uppercase tracking-wider">{t("profile.multilingual")}</p>
       </footer>
     </div>
   );

@@ -265,7 +265,16 @@ interface PosState {
   // Customer
   searchCustomer: (phone: string) => Promise<void>;
   selectCustomer: (c: PosCustomer | null) => void;
-  addCustomer: (data: { name: string; phone: string; email?: string }) => Promise<PosCustomer | null>;
+  addCustomer: (data: {
+    name: string;
+    phone: string;
+    email?: string;
+    is_b2b?: boolean;
+    company_name?: string;
+    gstin?: string;
+    pan?: string;
+    address?: string;
+  }) => Promise<PosCustomer | null>;
   clearCustomerSearch: () => void;
 
   // Cart
@@ -568,27 +577,63 @@ export const usePos = create<PosState>((set, get) => ({
 
     set({ customerSearching: true });
     try {
-      const customer = await pos.lookupCustomer(phone);
-      set({
-        customerSearchResults: customer ? [customer] : [],
-        customerSearching: false,
-      });
+      const res = await pos.lookupCustomer(phone);
+      if (res && res.is_b2b && res.company) {
+        // Business detected
+        set({
+          customerSearchResults: [res],
+          customerSearching: false,
+        });
+      } else {
+        set({
+          customerSearchResults: res ? [res] : [],
+          customerSearching: false,
+        });
+      }
     } catch {
       set({ customerSearchResults: [], customerSearching: false });
     }
   },
 
-  selectCustomer: (c) => set({ selectedCustomer: c, customerSearchResults: [], isAnonymous: false }),
+  selectCustomer: (c) => {
+    if (c && (c as any).is_b2b && (c as any).company) {
+      set({
+        selectedCustomer: c,
+        isB2b: true,
+        selectedCompany: (c as any).company,
+        customerSearchResults: [],
+        isAnonymous: false
+      });
+    } else {
+      set({
+        selectedCustomer: c,
+        isB2b: false,
+        selectedCompany: null,
+        customerSearchResults: [],
+        isAnonymous: false
+      });
+    }
+  },
 
   addCustomer: async (data) => {
     set({ loading: true, error: null });
     try {
-      const customer = await pos.addCustomer(data);
-      set({
-        selectedCustomer: customer,
-        customerSearchResults: [],
-        loading: false,
-      });
+      const customer = await pos.addCustomer(data as any);
+      if (customer && (customer as any).is_b2b && (customer as any).company) {
+        set({
+          selectedCustomer: customer,
+          isB2b: true,
+          selectedCompany: (customer as any).company,
+          customerSearchResults: [],
+          loading: false,
+        });
+      } else {
+        set({
+          selectedCustomer: customer,
+          customerSearchResults: [],
+          loading: false,
+        });
+      }
       return customer;
     } catch (err: any) {
       const message =

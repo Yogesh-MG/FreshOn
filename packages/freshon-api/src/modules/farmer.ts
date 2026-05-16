@@ -189,3 +189,18 @@ export async function getOrders(): Promise<FarmerOrder[]> {
   const res = await getClient().get<FarmerOrder[]>("/api/farmer/orders/");
   return res.data;
 }
+
+/**
+ * Update order status (mark packed, request pickup).
+ * POST /api/farmer/orders/{id}/status/
+ */
+export async function updateOrderStatus(
+  orderId: string,
+  status: string
+): Promise<{ status: string; order_id: string }> {
+  const res = await getClient().post<{ status: string; order_id: string }>(
+    `/api/farmer/orders/${orderId}/status/`,
+    { status }
+  );
+  return res.data;
+}

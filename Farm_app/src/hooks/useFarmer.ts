@@ -157,6 +157,18 @@ export const useOrders = () =>
     refetchInterval: 30 * 1000,
   });
 
+export const useUpdateOrderStatus = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ orderId, status }: { orderId: number | string; status: string }) =>
+      farmer.updateOrderStatus(String(orderId), status),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: farmerKeys.orders });
+      queryClient.invalidateQueries({ queryKey: farmerKeys.dashboard });
+    },
+  });
+};
+
 export const useUploadMedia = () =>
   useMutation({
     mutationFn: ({ file, type }: { file: File; type: any }) =>

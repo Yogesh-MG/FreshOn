@@ -8,30 +8,34 @@ import { LanguageScreen } from "./sub/LanguageScreen";
 import { HelpSupportScreen } from "./sub/HelpSupportScreen";
 import { PrivacyTermsScreen } from "./sub/PrivacyTermsScreen";
 import { NotificationScreen } from "./sub/NotificationScreen";
+import { ResourcesScreen } from "./sub/ResourcesScreen";
+import { useTranslation } from "react-i18next";
 
 interface Props {
   farmerName: string;
   onSignOut: () => void;
 }
 
-type ActiveScreen = "profile" | "farm" | "bank" | "language" | "help" | "privacy" | "notifications";
+type ActiveScreen = "profile" | "farm" | "bank" | "language" | "help" | "privacy" | "notifications" | "resources";
 
 export const ProfileScreen = ({ farmerName, onSignOut }: Props) => {
+  const { t } = useTranslation();
   const { data: profile } = useProfile();
   const [activeScreen, setActiveScreen] = useState<ActiveScreen>("profile");
   
   const displayName = profile?.name || farmerName;
-  const location = profile?.location || "Farm location";
-  const acreage = profile?.total_acreage ? `${profile.total_acreage} acres` : "Acreage pending";
+  const location = profile?.location || t("profile.acreagePending");
+  const acreage = profile?.total_acreage ? `${profile.total_acreage} ${t("profile.acres")}` : t("profile.acreagePending");
 
   const rows = [
-    { id: "farm", icon: "agriculture", label: "Farm details", hint: `${acreage} - ${location}` },
-    { id: "certification", icon: "verified_user", label: "Organic certification", hint: profile?.speciality || "Certification pending" },
-    { id: "bank", icon: "account_balance", label: "Bank & payouts", hint: "Payout profile" },
-    { id: "pickup", icon: "local_shipping", label: "Pickup preferences", hint: "Daily pickup" },
-    { id: "language", icon: "language", label: "Language", hint: profile?.preferred_language === 'kn' ? 'ಕನ್ನಡ' : profile?.preferred_language === 'hi' ? 'हिन्दी' : 'English' },
-    { id: "help", icon: "support_agent", label: "Help & support", hint: "" },
-    { id: "privacy", icon: "policy", label: "Privacy & terms", hint: "" },
+    { id: "farm", icon: "agriculture", label: t("profile.farmDetails"), hint: `${acreage} - ${location}` },
+    { id: "certification", icon: "verified_user", label: t("profile.organicCertification"), hint: profile?.speciality || t("profile.certificationPending") },
+    { id: "bank", icon: "account_balance", label: t("profile.bankPayouts"), hint: t("profile.payoutProfile") },
+    { id: "pickup", icon: "local_shipping", label: t("profile.pickupPreferences"), hint: t("profile.dailyPickup") },
+    { id: "language", icon: "language", label: t("profile.language"), hint: profile?.preferred_language === 'kn' ? 'ಕನ್ನಡ' : profile?.preferred_language === 'hi' ? 'हिन्दी' : profile?.preferred_language === 'te' ? 'తెలుగు' : 'English' },
+    { id: "resources", icon: "menu_book", label: t("resources.knowledgeBase"), hint: t("resources.organicBestPractices") },
+    { id: "help", icon: "support_agent", label: t("profile.helpSupport"), hint: "" },
+    { id: "privacy", icon: "policy", label: t("profile.privacyTerms"), hint: "" },
   ];
 
   if (activeScreen === "farm") return <FarmDetailsScreen onBack={() => setActiveScreen("profile")} />;
@@ -40,6 +44,7 @@ export const ProfileScreen = ({ farmerName, onSignOut }: Props) => {
   if (activeScreen === "help") return <HelpSupportScreen onBack={() => setActiveScreen("profile")} />;
   if (activeScreen === "privacy") return <PrivacyTermsScreen onBack={() => setActiveScreen("profile")} />;
   if (activeScreen === "notifications") return <NotificationScreen onBack={() => setActiveScreen("profile")} />;
+  if (activeScreen === "resources") return <ResourcesScreen onBack={() => setActiveScreen("profile")} />;
 
   return (
     <main className="px-5 pt-6 space-y-5 pb-20">
@@ -54,7 +59,7 @@ export const ProfileScreen = ({ farmerName, onSignOut }: Props) => {
               </div>
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-wider text-primary">
-                  Verified Farmer
+                  {t("profile.verifiedFarmer")}
                 </p>
                 <h2 className="text-2xl font-extrabold tracking-tight">{displayName}</h2>
               </div>
@@ -71,9 +76,9 @@ export const ProfileScreen = ({ farmerName, onSignOut }: Props) => {
 
       <div className="grid grid-cols-3 gap-3">
         {[
-          { v: String(profile?.rating || 4.9), l: "Rating", icon: "star" },
-          { v: String(profile?.years_of_experience || 0), l: "Years", icon: "shopping_basket" },
-          { v: acreage.replace(" acres", ""), l: "Acres", icon: "schedule" },
+          { v: String(profile?.rating || 4.9), l: t("profile.rating"), icon: "star" },
+          { v: String(profile?.years_of_experience || 0), l: t("profile.years"), icon: "shopping_basket" },
+          { v: profile?.total_acreage ? String(profile.total_acreage) : "-", l: t("profile.acres"), icon: "schedule" },
         ].map((s) => (
           <div key={s.l} className="glass rounded-2xl p-3 text-center">
             <Icon name={s.icon} className="text-primary-foreground text-base" filled />
@@ -107,9 +112,8 @@ export const ProfileScreen = ({ farmerName, onSignOut }: Props) => {
         className="w-full h-12 rounded-full glass text-destructive font-bold text-sm tap flex items-center justify-center gap-2"
       >
         <Icon name="logout" className="text-base" weight={700} />
-        Sign out
+        {t("profile.signOut")}
       </button>
     </main>
   );
 };
-

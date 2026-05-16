@@ -542,17 +542,22 @@ export interface FarmerPayout {
 }
 
 export interface FarmerBankDetails {
-  account_holder_name: string;
+  id?: number;
+  account_name: string;
   account_number: string;
   ifsc_code: string;
   bank_name: string;
-  branch_name: string;
+  upi_id?: string;
+  is_verified?: boolean;
 }
 
 export interface FarmerNotification {
   id: string;
   title: string;
   message: string;
+  type: 'info' | 'success' | 'warning' | 'error';
+  notification_type?: 'new_order' | 'payment_credited' | 'quality_alert' | 'pickup_scheduled' | 'general';
+  metadata?: Record<string, unknown>;
   is_read: boolean;
   created_at: string;
 }

@@ -122,7 +122,9 @@ export default function BillingSidebar() {
                     className="w-full px-3 py-2 text-left border-b-2 border-foreground last:border-b-0 hover:bg-primary hover:text-primary-foreground flex items-center justify-between">
                     <div>
                       <div className="font-extrabold text-sm flex items-center gap-1">
-                        {c.name} {c.pride && <Sparkles size={12} className="text-accent"/>}
+                        {c.name} 
+                        {c.pride && <Sparkles size={12} className="text-accent"/>}
+                        {(c as any).is_b2b && <Building2 size={12} className="text-primary-foreground/70" />}
                       </div>
                       <div className="font-mono text-xs font-bold">{c.phone}</div>
                     </div>

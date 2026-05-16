@@ -1,10 +1,12 @@
 import { motion } from "framer-motion";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { StepHeader } from "../freshon/StepHeader";
 import { Icon } from "@/components/freshon/Icon";
 import founderPoster from "@/assets/founder-poster.jpg";
 
 export const FounderStep = ({ onNext, onBack }: { onNext: () => void; onBack: () => void }) => {
+  const { t } = useTranslation();
   const [playing, setPlaying] = useState(false);
 
   return (
@@ -16,18 +18,18 @@ export const FounderStep = ({ onNext, onBack }: { onNext: () => void; onBack: ()
       transition={{ duration: 0.35 }}
       className="min-h-dvh md:min-h-[860px] flex flex-col"
     >
-      <StepHeader current={2} total={6} onBack={onBack} label="Founder's Mission" />
+      <StepHeader current={2} total={6} onBack={onBack} label={t("onboarding.founderMission")} />
 
       <div className="px-7 pt-8 flex-1 flex flex-col">
         <span className="pill bg-secondary/10 text-secondary w-fit">
           <Icon name="favorite" className="text-sm" filled />
-          A Personal Note
+          {t("onboarding.personalNote")}
         </span>
         <h2 className="mt-4 text-3xl font-extrabold tracking-tight text-foreground leading-tight">
-          A Message from <span className="text-secondary">Sattya</span>
+          {t("onboarding.messageFrom", { name: "Sattya" })}
         </h2>
         <p className="mt-2 text-foreground/60 font-medium">
-          Founder & Chief Cultivator, FreshOn
+          {t("onboarding.founderTitle")}
         </p>
 
         {/* Video player */}
@@ -61,10 +63,10 @@ export const FounderStep = ({ onNext, onBack }: { onNext: () => void; onBack: ()
           <div className="absolute bottom-0 left-0 right-0 p-5 text-background">
             <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider opacity-80 mb-2">
               <span className="size-1.5 rounded-full bg-primary animate-pulse" />
-              {playing ? "Now playing" : "1 min 24 sec"}
+              {playing ? t("onboarding.nowPlaying") : t("onboarding.videoLength")}
             </div>
             <p className="font-semibold text-balance leading-snug">
-              "Every farmer who joins us is a guardian of the soil. Together, we feed families with truth."
+              "{t("onboarding.founderQuote")}"
             </p>
           </div>
         </div>
@@ -75,7 +77,7 @@ export const FounderStep = ({ onNext, onBack }: { onNext: () => void; onBack: ()
           onClick={onNext}
           className="w-full h-16 rounded-full bg-gradient-forest text-background font-semibold text-base shadow-deep flex items-center justify-center gap-2 tap mb-6"
         >
-          Continue
+          {t("onboarding.continue")}
           <Icon name="arrow_forward" weight={600} />
         </button>
       </div>

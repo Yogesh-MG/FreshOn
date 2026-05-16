@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Bar,
   BarChart,
@@ -25,6 +25,7 @@ import { WalletScreen } from "./screens/WalletScreen";
 import { AddProductSheet } from "./sheets/AddProductSheet";
 import { ManageDeliverySheet } from "./sheets/ManageDeliverySheet";
 import { Product, ProductStatus } from "./types";
+import { useTranslation } from "react-i18next";
 
 
 interface Props {
@@ -82,7 +83,6 @@ const productToBatchPayload = (product: Product) => {
     is_organic: true,
   };
 
-  // If this is a custom product (not from the catalog), pass the name
   if (product.customProductName) {
     payload.custom_product_name = product.customProductName;
     payload.product_id = 0;
@@ -92,6 +92,7 @@ const productToBatchPayload = (product: Product) => {
 };
 
 export const Dashboard = ({ onSignOut, farmerName = "Ramesh" }: Props) => {
+  const { t } = useTranslation();
   const { logout, user } = useAuth();
   const { data: profile } = useProfile();
   const { data: dashboard } = useDashboard();
@@ -121,12 +122,12 @@ export const Dashboard = ({ onSignOut, farmerName = "Ramesh" }: Props) => {
     try {
       await createBatch.mutateAsync(productToBatchPayload(p) as CreateBatchPayload);
       setSheet({ kind: "none" });
-      toast({ title: "Submitted for approval", description: `${p.name} is pending FreshOn quality review.` });
+      toast({ title: t("common.success"), description: `${p.name} ${t("dashboard.noProductsDesc")}` });
     } catch (error) {
       setSheet({ kind: "none" });
       toast({
-        title: "Error",
-        description: "Could not add product. Please try again.",
+        title: t("common.error"),
+        description: t("common.tryAgain"),
         variant: "destructive",
       });
     }
@@ -134,12 +135,12 @@ export const Dashboard = ({ onSignOut, farmerName = "Ramesh" }: Props) => {
 
   const handleSaveDelivery = (p: Product) => {
     setSheet({ kind: "none" });
-    toast({ title: "Status updated", description: `${p.name} -> ${p.status}` });
+    toast({ title: t("common.success"), description: `${p.name} -> ${p.status}` });
   };
 
   const openManage = (p: Product) => {
     if (p.status === "Pending") {
-      toast({ title: "Awaiting approval", description: "FreshOn is reviewing this product." });
+      toast({ title: t("status.pending"), description: "FreshOn is reviewing this product." });
       return;
     }
     setSheet({ kind: "manage", product: p });
@@ -149,6 +150,14 @@ export const Dashboard = ({ onSignOut, farmerName = "Ramesh" }: Props) => {
     logout();
     onSignOut();
   };
+
+  // Request push notification permission after user is engaged
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      enablePush().catch(() => {});
+    }, 30000); // Delay to avoid immediate prompt
+    return () => clearTimeout(timer);
+  }, [enablePush]);
 
   return (
     <div className="min-h-dvh md:min-h-[860px] bg-background pb-24 relative">
@@ -166,10 +175,10 @@ export const Dashboard = ({ onSignOut, farmerName = "Ramesh" }: Props) => {
                 <span className="absolute inset-0 rounded-full bg-secondary animate-ping opacity-75" />
                 <span className="relative rounded-full bg-secondary size-1.5" />
               </span>
-              Live - Verified
+              {t("dashboard.liveVerified")}
             </p>
             <h1 className="text-base font-extrabold tracking-tight text-foreground truncate">
-              Namaste, {displayName}
+              {t("dashboard.greeting", { name: displayName })}
             </h1>
           </div>
           <button onClick={() => setNotifOpen(true)} className="relative size-11 rounded-full glass flex items-center justify-center tap">
@@ -198,7 +207,7 @@ export const Dashboard = ({ onSignOut, farmerName = "Ramesh" }: Props) => {
                 <div className="absolute -top-12 -right-12 size-44 rounded-full bg-primary/30 blur-3xl" />
                 <div className="absolute -bottom-16 -left-8 size-44 rounded-full bg-primary/15 blur-3xl" />
                 <div className="relative flex items-center justify-between mb-1">
-                  <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-primary">Total Earnings</span>
+                  <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-primary">{t("dashboard.totalEarnings")}</span>
                   <span className="pill bg-primary text-secondary-deep">
                     <Icon name="trending_up" className="text-sm" weight={700} />
                     +24.8%
@@ -210,25 +219,25 @@ export const Dashboard = ({ onSignOut, farmerName = "Ramesh" }: Props) => {
                   </span>
                 </div>
                 <p className="relative mt-2 text-background/70 text-sm font-medium">
-                  <span className="text-primary font-bold">{formatCurrency(dashboard?.monthly_earnings ?? dashboard?.current_month_earnings ?? 0)}</span> earned this month
+                  <span className="text-primary font-bold">{formatCurrency(dashboard?.monthly_earnings ?? dashboard?.current_month_earnings ?? 0)}</span> {t("dashboard.earnedThisMonth")}
                 </p>
                 <div className="relative mt-6 flex gap-3">
                   <button onClick={() => setTab("wallet")} className="flex-1 h-12 rounded-full bg-primary text-secondary-deep font-bold text-sm tap flex items-center justify-center gap-2">
                     <Icon name="account_balance_wallet" className="text-base" filled weight={600} />
-                    Withdraw
+                    {t("dashboard.withdraw")}
                   </button>
                   <button onClick={() => setTab("wallet")} className="h-12 px-5 rounded-full bg-background/15 border border-background/20 text-background font-semibold text-sm tap flex items-center gap-2">
                     <Icon name="receipt_long" className="text-base" />
-                    History
+                    {t("dashboard.history")}
                   </button>
                 </div>
               </motion.div>
 
               <div className="grid grid-cols-2 gap-3">
-                <StatTile icon="shopping_basket" label="Orders" value={String(dashboard?.total_orders ?? 0)} delta="+12" tone="primary" />
+                <StatTile icon="shopping_basket" label={t("dashboard.orders")} value={String(dashboard?.total_orders ?? 0)} delta="+12" tone="primary" />
                 <StatTile
                   icon="inventory_2"
-                  label="Products"
+                  label={t("dashboard.products")}
                   value={String(dashboard?.total_products ?? liveProducts.length)}
                   delta={`${liveProducts.filter((p) => p.status === "Live" || p.status === "Approved").length} live`}
                   tone="secondary"
@@ -238,9 +247,9 @@ export const Dashboard = ({ onSignOut, farmerName = "Ramesh" }: Props) => {
               <section className="rounded-[28px] glass p-5">
                 <div className="flex items-center justify-between mb-1">
                   <div>
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-secondary">Sales Volume</p>
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-secondary">{t("dashboard.salesVolume")}</p>
                     <h3 className="text-lg font-extrabold tracking-tight text-foreground">
-                      {range === "7d" ? "Last 7 days" : "Last 30 days"}
+                      {range === "7d" ? t("dashboard.last7Days") : t("dashboard.last30Days")}
                     </h3>
                   </div>
                   <div className="flex p-1 rounded-full bg-muted text-xs font-bold">
@@ -280,8 +289,8 @@ export const Dashboard = ({ onSignOut, farmerName = "Ramesh" }: Props) => {
                 ) : (
                   <EmptyState
                     icon="trending_up"
-                    title="No sales data yet"
-                    description="Your sales analytics will appear here once you get your first orders."
+                    title={t("dashboard.noSalesData")}
+                    description={t("dashboard.noSalesDesc")}
                   />
                 )}
               </section>
@@ -289,11 +298,11 @@ export const Dashboard = ({ onSignOut, farmerName = "Ramesh" }: Props) => {
               <section>
                 <div className="flex items-center justify-between mb-3 px-1">
                   <div>
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-secondary">Inventory</p>
-                    <h3 className="text-lg font-extrabold tracking-tight">My Products</h3>
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-secondary">{t("dashboard.inventory")}</p>
+                    <h3 className="text-lg font-extrabold tracking-tight">{t("dashboard.myProducts")}</h3>
                   </div>
                   <span className="text-xs font-bold text-foreground/50">
-                    {batchesLoading ? "Loading" : `${liveProducts.length} items`}
+                    {batchesLoading ? t("common.loading") : `${liveProducts.length} items`}
                   </span>
                 </div>
                 {liveProducts.length > 0 ? (
@@ -317,10 +326,10 @@ export const Dashboard = ({ onSignOut, farmerName = "Ramesh" }: Props) => {
                 ) : (
                   <EmptyState
                     icon="inventory_2"
-                    title="No products yet"
-                    description="Add your first product to start selling on FreshOn."
+                    title={t("dashboard.noProducts")}
+                    description={t("dashboard.noProductsDesc")}
                     action={{
-                      label: "Add Product",
+                      label: t("dashboard.addProduct"),
                       onClick: () => setSheet({ kind: "add", mode: "product" }),
                     }}
                   />
@@ -328,11 +337,11 @@ export const Dashboard = ({ onSignOut, farmerName = "Ramesh" }: Props) => {
                 <div className="mt-4 grid grid-cols-2 gap-3">
                   <button onClick={() => setSheet({ kind: "add", mode: "product" })} className="h-14 rounded-2xl bg-gradient-golden text-secondary-deep font-bold text-sm shadow-glow flex items-center justify-center gap-2 tap">
                     <Icon name="add" className="text-xl" weight={700} />
-                    Add Product
+                    {t("dashboard.addProduct")}
                   </button>
                   <button onClick={() => setSheet({ kind: "add", mode: "harvest" })} className="h-14 rounded-2xl bg-secondary text-background font-bold text-sm flex items-center justify-center gap-2 tap">
                     <Icon name="agriculture" className="text-xl" filled />
-                    Update Harvest
+                    {t("dashboard.updateHarvest")}
                   </button>
                 </div>
               </section>
@@ -340,12 +349,12 @@ export const Dashboard = ({ onSignOut, farmerName = "Ramesh" }: Props) => {
               <section className="rounded-[28px] glass p-5">
                 <div className="flex items-center justify-between mb-4">
                   <div>
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-secondary">Wallet</p>
-                    <h3 className="text-lg font-extrabold tracking-tight">Recent Activity</h3>
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-secondary">{t("dashboard.wallet")}</p>
+                    <h3 className="text-lg font-extrabold tracking-tight">{t("dashboard.recentActivity")}</h3>
                   </div>
                   <span className="pill bg-secondary/10 text-secondary">
                     <Icon name="schedule" className="text-sm" />
-                    Next payout Fri
+                    {t("dashboard.nextPayout")}
                   </span>
                 </div>
                 {recentTransactions.length > 0 ? (
@@ -366,8 +375,8 @@ export const Dashboard = ({ onSignOut, farmerName = "Ramesh" }: Props) => {
                 ) : (
                   <EmptyState
                     icon="receipt_long"
-                    title="No transactions yet"
-                    description="Your wallet activity will appear here once you make your first sale."
+                    title={t("dashboard.noTransactions")}
+                    description={t("dashboard.noTransactionsDesc")}
                   />
                 )}
               </section>
@@ -394,13 +403,13 @@ export const Dashboard = ({ onSignOut, farmerName = "Ramesh" }: Props) => {
 
       <nav className="fixed md:absolute bottom-4 left-4 right-4 md:left-3 md:right-3 z-30">
         <div className="glass rounded-full px-2 py-2 flex items-center justify-around shadow-deep">
-          <NavBtn icon="dashboard" label="Home" active={tab === "home"} onClick={() => setTab("home")} />
-          <NavBtn icon="storefront" label="Shop" active={tab === "shop"} onClick={() => setTab("shop")} />
+          <NavBtn icon="dashboard" label={t("dashboard.home")} active={tab === "home"} onClick={() => setTab("home")} />
+          <NavBtn icon="storefront" label={t("dashboard.shop")} active={tab === "shop"} onClick={() => setTab("shop")} />
           <button onClick={() => setSheet({ kind: "add", mode: "product" })} className="size-12 rounded-full bg-gradient-golden text-secondary-deep flex items-center justify-center shadow-glow tap -mt-6">
             <Icon name="add" className="text-2xl" weight={700} />
           </button>
-          <NavBtn icon="account_balance_wallet" label="Wallet" active={tab === "wallet"} onClick={() => setTab("wallet")} />
-          <NavBtn icon="person" label="Profile" active={tab === "profile"} onClick={() => setTab("profile")} />
+          <NavBtn icon="account_balance_wallet" label={t("dashboard.wallet")} active={tab === "wallet"} onClick={() => setTab("wallet")} />
+          <NavBtn icon="person" label={t("dashboard.profile")} active={tab === "profile"} onClick={() => setTab("profile")} />
         </div>
       </nav>
 
